@@ -1,7 +1,10 @@
 package com.example.smartcampuscompanion.ui.campus_info
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,7 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 data class Student(val name: String, val email: String, val yearLevel: String)
@@ -102,15 +105,13 @@ fun CampusInfoScreen(onNavigateUp: () -> Unit) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
+                .padding(paddingValues),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item { Spacer(modifier = Modifier.height(0.dp)) } // For spacing at the top
             items(departments) { department ->
                 DepartmentCard(department)
             }
-            item { Spacer(modifier = Modifier.height(16.dp)) } // For spacing at the bottom
         }
     }
 }
@@ -120,17 +121,26 @@ fun DepartmentCard(department: Department) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            Text(department.name, style = MaterialTheme.typography.titleLarge)
-            Text(department.contact, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = department.name,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = department.contact,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Spacer(modifier = Modifier.height(16.dp))
             Text("Students", style = MaterialTheme.typography.titleMedium)
             Divider(modifier = Modifier.padding(vertical = 8.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 department.students.forEach { student ->
                     StudentRow(student)
                 }
@@ -141,20 +151,41 @@ fun DepartmentCard(department: Department) {
 
 @Composable
 fun StudentRow(student: Student) {
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            imageVector = Icons.Default.Person,
-            contentDescription = "Student Icon",
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
             modifier = Modifier
                 .size(40.dp)
-                .clip(CircleShape),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = null, // Decorative
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
         Spacer(modifier = Modifier.width(16.dp))
         Column {
-            Text(student.name, style = MaterialTheme.typography.bodyLarge)
-            Text(student.email, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-            Text(student.yearLevel, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            Text(
+                text = student.name,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = student.email,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = student.yearLevel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
