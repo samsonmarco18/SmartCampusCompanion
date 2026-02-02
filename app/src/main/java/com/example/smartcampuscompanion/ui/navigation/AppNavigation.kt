@@ -39,7 +39,17 @@ fun AppNavigation() {
             })
         }
         composable(Screen.Dashboard.route) {
-            DashboardScreen(onNavigateToCampusInfo = { navController.navigate(Screen.CampusInfo.route) })
+            DashboardScreen(
+                onNavigateToCampusInfo = { navController.navigate(Screen.CampusInfo.route) },
+                onLogout = {
+                    sessionManager.clearAuthToken()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Dashboard.route) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
         }
         composable(Screen.CampusInfo.route) {
             CampusInfoScreen(onNavigateUp = { navController.navigateUp() })
