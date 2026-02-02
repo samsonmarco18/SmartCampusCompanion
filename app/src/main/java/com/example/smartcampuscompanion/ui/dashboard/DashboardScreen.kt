@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
+// Data class representing each dashboard item
 data class DashboardItem(
     val title: String,
     val icon: ImageVector,
@@ -65,7 +66,7 @@ fun DashboardScreen(onNavigateToCampusInfo: () -> Unit, onLogout: () -> Unit) {
                 }
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background // Apply background color
     ) { paddingValues ->
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -92,7 +93,7 @@ fun DashboardCard(item: DashboardItem) {
         shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp), // Rounded corners
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp), // Soft shadow
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface // Themed surface color
+            containerColor = MaterialTheme.colorScheme.surface // Themed card color
         )
     ) {
         Column(
