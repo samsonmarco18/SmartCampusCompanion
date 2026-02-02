@@ -65,7 +65,7 @@ fun DashboardScreen(onNavigateToCampusInfo: () -> Unit, onLogout: () -> Unit) {
                 }
             )
         },
-        containerColor = MaterialTheme.colorScheme.background // Apply background color
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -89,10 +89,10 @@ fun DashboardCard(item: DashboardItem) {
         modifier = Modifier
             .aspectRatio(1f)
             .clickable { item.onClick() },
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp), // Rounded corners
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp), // Soft shadow
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface // Apply card color from theme
+            containerColor = MaterialTheme.colorScheme.surface // Themed surface color
         )
     ) {
         Column(
@@ -105,13 +105,13 @@ fun DashboardCard(item: DashboardItem) {
             Icon(
                 imageVector = item.icon,
                 contentDescription = item.title,
-                modifier = Modifier.size(52.dp),
-                tint = MaterialTheme.colorScheme.primary // Primary color for icon
+                modifier = Modifier.size(52.dp), // Bigger icon
+                tint = MaterialTheme.colorScheme.primary // Themed icon color
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp)) // More spacing
             Text(
                 text = item.title,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface // Themed text color
             )
         }
     }
