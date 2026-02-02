@@ -21,12 +21,14 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,14 +64,17 @@ fun DashboardScreen(onNavigateToCampusInfo: () -> Unit, onLogout: () -> Unit) {
                     }
                 }
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background // Apply background color
     ) { paddingValues ->
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = paddingValues,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp)
         ) {
             items(items) { item ->
                 DashboardCard(item)
@@ -84,21 +89,30 @@ fun DashboardCard(item: DashboardItem) {
         modifier = Modifier
             .aspectRatio(1f)
             .clickable { item.onClick() },
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface // Apply card color from theme
+        )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = item.icon,
                 contentDescription = item.title,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(52.dp),
+                tint = MaterialTheme.colorScheme.primary // Primary color for icon
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = item.title)
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = item.title,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
