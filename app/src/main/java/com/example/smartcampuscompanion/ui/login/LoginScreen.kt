@@ -26,8 +26,8 @@ import com.example.smartcampuscompanion.util.SessionManager
 
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
-    var username by remember { mutableStateOf("admin") }
-    var password by remember { mutableStateOf("password") }
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     val context = LocalContext.current
@@ -38,7 +38,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
     // that handles user authentication with a backend server.
     fun performLogin() {
         // Replace this with a real authentication check
-        if (username == "admin" && password == "password") {
+        if (username.trim() == "admin" && password.trim() == "admin123") {
             // On successful login, save the auth token and navigate to the main screen
             sessionManager.saveAuthToken("dummy_token")
             onLoginSuccess()
