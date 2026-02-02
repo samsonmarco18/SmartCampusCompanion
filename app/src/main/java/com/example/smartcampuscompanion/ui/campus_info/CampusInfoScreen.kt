@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -114,6 +115,17 @@ val departments = listOf(
     )
 )
 
+val departmentColors = listOf(
+    Color(0xFFFADBD8),
+    Color(0xFFEBDEF0),
+    Color(0xFFD6EAF8),
+    Color(0xFFD1F2EB),
+    Color(0xFFFCF3CF),
+    Color(0xFFFDEBD0),
+    Color(0xFFE5E7E9),
+    Color(0xFFE8DAEF)
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CampusInfoScreen(onNavigateUp: () -> Unit) {
@@ -136,19 +148,22 @@ fun CampusInfoScreen(onNavigateUp: () -> Unit) {
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(departments) { department ->
-                DepartmentCard(department)
+            itemsIndexed(departments) { index, department ->
+                DepartmentCard(
+                    department = department,
+                    containerColor = departmentColors[index % departmentColors.size]
+                )
             }
         }
     }
 }
 
 @Composable
-fun DepartmentCard(department: Department) {
+fun DepartmentCard(department: Department, containerColor: Color) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = containerColor)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
