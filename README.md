@@ -12,9 +12,9 @@ Team Roles
 |-----------------------|-------------------|
 | Samson, Marco         | Team Leader       |
 | Reves, Mark Jerome    | Git Manager       |
-| Rocha, Edrian         | UI/UX Developer   |
-| Quinto, Nel John      | Feature Developer |
-| Rouello, Carl Godfrey | QA / Documenter   |
+| Rouello, Carl Godfrey | UI/UX Developer   |
+| Rocha, Edrian         | Feature Developer |
+| Quinto, Nel John      | QA / Documenter   |
 
 ---
 
