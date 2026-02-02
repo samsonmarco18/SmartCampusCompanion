@@ -42,7 +42,7 @@ fun AppNavigation() {
             DashboardScreen(onNavigateToCampusInfo = { navController.navigate(Screen.CampusInfo.route) })
         }
         composable(Screen.CampusInfo.route) {
-            CampusInfoScreen()
+            CampusInfoScreen(onNavigateUp = { navController.navigateUp() })
         }
     }
 }
