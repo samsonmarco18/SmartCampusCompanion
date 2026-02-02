@@ -2,8 +2,10 @@ package com.example.smartcampuscompanion.ui.campus_info
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,12 +24,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-data class Department(val name: String, val contact: String)
+data class Department(val name: String, val contact: String, val students: List<String>)
 
 val departments = listOf(
-    Department("Computer Science", "cs@example.com"),
-    Department("Electrical Engineering", "ee@example.com"),
-    Department("Mechanical Engineering", "me@example.com")
+    Department("Computer Science", "cs@example.com", listOf("Alice", "Bob", "Charlie")),
+    Department("Electrical Engineering", "ee@example.com", listOf("David", "Eve", "Frank")),
+    Department("Mechanical Engineering", "me@example.com", listOf("Grace", "Heidi", "Ivan"))
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,6 +72,11 @@ fun DepartmentCard(department: Department) {
         ) {
             Text(department.name, style = MaterialTheme.typography.titleMedium)
             Text(department.contact, style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Students:", style = MaterialTheme.typography.titleSmall)
+            department.students.forEach { student ->
+                Text(student, style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }
