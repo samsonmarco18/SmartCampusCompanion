@@ -84,6 +84,33 @@ val departments = listOf(
             Student("Peggy", "peggy@student.university.edu", "2nd Year"),
             Student("Victor", "victor@student.university.edu", "1st Year")
         )
+    ),
+    Department(
+        name = "Information Technology",
+        contact = "it.office@university.edu",
+        students = listOf(
+            Student("Xavier", "xavier@student.university.edu", "1st Year"),
+            Student("Yara", "yara@student.university.edu", "2nd Year"),
+            Student("Zane", "zane@student.university.edu", "3rd Year")
+        )
+    ),
+    Department(
+        name = "Chemical Engineering",
+        contact = "che.office@university.edu",
+        students = listOf(
+            Student("Aaron", "aaron@student.university.edu", "4th Year"),
+            Student("Brian", "brian@student.university.edu", "2nd Year"),
+            Student("Chloe", "chloe@student.university.edu", "1st Year")
+        )
+    ),
+    Department(
+        name = "Physics",
+        contact = "phy.office@university.edu",
+        students = listOf(
+            Student("Diana", "diana@student.university.edu", "3rd Year"),
+            Student("Ethan", "ethan@student.university.edu", "4th Year"),
+            Student("Fiona", "fiona@student.university.edu", "2nd Year")
+        )
     )
 )
 
