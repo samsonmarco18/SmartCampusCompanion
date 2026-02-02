@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -56,7 +57,9 @@ fun DashboardScreen(onNavigateToCampusInfo: () -> Unit, onLogout: () -> Unit) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = paddingValues,
-            modifier = Modifier.padding(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(horizontal = 8.dp)
         ) {
             items(items) { item ->
                 DashboardCard(item)
@@ -69,7 +72,7 @@ fun DashboardScreen(onNavigateToCampusInfo: () -> Unit, onLogout: () -> Unit) {
 fun DashboardCard(item: DashboardItem) {
     Card(
         modifier = Modifier
-            .padding(8.dp)
+            .aspectRatio(1f)
             .clickable { item.onClick() },
     ) {
         Column(
