@@ -14,7 +14,12 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -39,7 +44,12 @@ data class DashboardItem(
 @Composable
 fun DashboardScreen(onNavigateToCampusInfo: () -> Unit, onLogout: () -> Unit) {
     val items = listOf(
-        DashboardItem("Campus Info", Icons.Default.Info, onNavigateToCampusInfo)
+        DashboardItem("Campus Info", Icons.Default.Info, onNavigateToCampusInfo),
+        DashboardItem("Schedule", Icons.Default.CalendarMonth) {},
+        DashboardItem("Grades", Icons.Default.School) {},
+        DashboardItem("Campus Map", Icons.Default.Map) {},
+        DashboardItem("Notifications", Icons.Default.Notifications) {},
+        DashboardItem("Profile", Icons.Default.Person) {}
     )
 
     Scaffold(
@@ -57,9 +67,9 @@ fun DashboardScreen(onNavigateToCampusInfo: () -> Unit, onLogout: () -> Unit) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = paddingValues,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(horizontal = 8.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(16.dp)
         ) {
             items(items) { item ->
                 DashboardCard(item)
@@ -82,7 +92,11 @@ fun DashboardCard(item: DashboardItem) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(item.icon, contentDescription = item.title, modifier = Modifier.size(48.dp))
+            Icon(
+                imageVector = item.icon,
+                contentDescription = item.title,
+                modifier = Modifier.size(48.dp)
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = item.title)
         }
