@@ -30,90 +30,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-
-data class Student(val name: String, val email: String, val yearLevel: String)
-data class Department(val name: String, val contact: String, val students: List<Student>)
-
-val departments = listOf(
-    Department(
-        name = "Computer Science",
-        contact = "cs.office@university.edu",
-        students = listOf(
-            Student("Alice", "alice@student.university.edu", "4th Year"),
-            Student("Bob", "bob@student.university.edu", "3rd Year"),
-            Student("Charlie", "charlie@student.university.edu", "2nd Year")
-        )
-    ),
-    Department(
-        name = "Electrical Engineering",
-        contact = "ee.office@university.edu",
-        students = listOf(
-            Student("David", "david@student.university.edu", "4th Year"),
-            Student("Eve", "eve@student.university.edu", "3rd Year"),
-            Student("Frank", "frank@student.university.edu", "1st Year")
-        )
-    ),
-    Department(
-        name = "Mechanical Engineering",
-        contact = "me.office@university.edu",
-        students = listOf(
-            Student("Grace", "grace@student.university.edu", "2nd Year"),
-            Student("Heidi", "heidi@student.university.edu", "4th Year"),
-            Student("Ivan", "ivan@student.university.edu", "3rd Year")
-        )
-    ),
-    Department(
-        name = "Civil Engineering",
-        contact = "ce.office@university.edu",
-        students = listOf(
-            Student("Judy", "judy@student.university.edu", "1st Year"),
-            Student("Mallory", "mallory@student.university.edu", "2nd Year"),
-            Student("Trent", "trent@student.university.edu", "4th Year")
-        )
-    ),
-    Department(
-        name = "Biology",
-        contact = "bio.office@university.edu",
-        students = listOf(
-            Student("Walter", "walter@student.university.edu", "3rd Year"),
-            Student("Peggy", "peggy@student.university.edu", "2nd Year"),
-            Student("Victor", "victor@student.university.edu", "1st Year")
-        )
-    ),
-    Department(
-        name = "Information Technology",
-        contact = "it.office@university.edu",
-        students = listOf(
-            Student("Xavier", "xavier@student.university.edu", "1st Year"),
-            Student("Yara", "yara@student.university.edu", "2nd Year"),
-            Student("Zane", "zane@student.university.edu", "3rd Year")
-        )
-    ),
-    Department(
-        name = "Chemical Engineering",
-        contact = "che.office@university.edu",
-        students = listOf(
-            Student("Aaron", "aaron@student.university.edu", "4th Year"),
-            Student("Brian", "brian@student.university.edu", "2nd Year"),
-            Student("Chloe", "chloe@student.university.edu", "1st Year")
-        )
-    ),
-    Department(
-        name = "Physics",
-        contact = "phy.office@university.edu",
-        students = listOf(
-            Student("Diana", "diana@student.university.edu", "3rd Year"),
-            Student("Ethan", "ethan@student.university.edu", "4th Year"),
-            Student("Fiona", "fiona@student.university.edu", "2nd Year")
-        )
-    )
-)
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.smartcampuscompanion.data.DepartmentWithStudents
+import com.example.smartcampuscompanion.data.Student
 
 val departmentColors = listOf(
     Color(0xFFFADBD8),
@@ -128,7 +55,9 @@ val departmentColors = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CampusInfoScreen(onNavigateUp: () -> Unit) {
+fun CampusInfoScreen(viewModel: CampusViewModel = viewModel(), onNavigateUp: () -> Unit) {
+    val departmentsWithStudents by viewModel.departmentsWithStudents.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -148,7 +77,7 @@ fun CampusInfoScreen(onNavigateUp: () -> Unit) {
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            itemsIndexed(departments) { index, department ->
+            itemsIndexed(departmentsWithStudents) { index, department ->
                 DepartmentCard(
                     department = department,
                     containerColor = departmentColors[index % departmentColors.size]
@@ -159,7 +88,7 @@ fun CampusInfoScreen(onNavigateUp: () -> Unit) {
 }
 
 @Composable
-fun DepartmentCard(department: Department, containerColor: Color) {
+fun DepartmentCard(department: DepartmentWithStudents, containerColor: Color) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -173,13 +102,13 @@ fun DepartmentCard(department: Department, containerColor: Color) {
                     .padding(16.dp)
             ) {
                 Text(
-                    text = department.name,
+                    text = department.department.name,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = department.contact,
+                    text = department.department.contact,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -5,9 +5,15 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Task::class], version = 1, exportSchema = false)
+@Database(
+    entities = [Task::class, Department::class, Student::class],
+    version = 9, // Incremented to force recreation of the database
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
+
     abstract fun taskDao(): TaskDao
+    abstract fun departmentDao(): DepartmentDao
 
     companion object {
         @Volatile
@@ -19,7 +25,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "smart_campus_companion_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

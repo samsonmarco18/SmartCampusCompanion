@@ -25,12 +25,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.smartcampuscompanion.ui.campus_info.departments
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.smartcampuscompanion.ui.campus_info.CampusViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,12 +45,14 @@ fun DashboardScreen(
     onNavigateToCampusMap: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    campusViewModel: CampusViewModel = viewModel()
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val totalDepartments = departments.size
-    val totalStudents = departments.sumOf { it.students.size }
+    val departmentsWithStudents by campusViewModel.departmentsWithStudents.collectAsState()
+    val totalDepartments = departmentsWithStudents.size
+    val totalStudents = departmentsWithStudents.sumOf { it.students.size }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
