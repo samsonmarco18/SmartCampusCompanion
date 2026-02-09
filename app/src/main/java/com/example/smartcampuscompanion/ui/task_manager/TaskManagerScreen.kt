@@ -2,46 +2,21 @@ package com.example.smartcampuscompanion.ui.task_manager
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -55,9 +30,7 @@ import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
+import java.util.*
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,13 +58,11 @@ fun TaskManagerScreen(
                 },
                 actions = {
                     Box {
-                        IconButton(onClick = { expanded = true }) {
+                        TextButton(onClick = { expanded = true }) {
+                            Text(selectedDepartment ?: "All Departments")
                             Icon(Icons.Default.ArrowDropDown, contentDescription = "Filter by department")
                         }
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
+                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                             DropdownMenuItem(text = { Text("All Departments") }, onClick = {
                                 selectedDepartment = null
                                 taskViewModel.setDepartmentFilter(null)
@@ -111,32 +82,29 @@ fun TaskManagerScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = {
-                taskToEdit = null // Clear task to signal creation
+                taskToEdit = null
                 showDialog = true
             }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Task")
             }
         }
     ) { paddingValues ->
-        Column(modifier = Modifier.padding(paddingValues)) {
-            selectedDepartment?.let {
-                Text(text = "Showing tasks for: $it", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-            }
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(tasks) { task ->
-                    TaskItem(
-                        task = task,
-                        onDelete = { taskViewModel.delete(task) },
-                        onEdit = {
-                            taskToEdit = task // Set task to be edited
-                            showDialog = true
-                        }
-                    )
+        Box(modifier = Modifier.padding(paddingValues)) {
+            if (tasks.isEmpty()) {
+                EmptyState()
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(tasks, key = { it.id }) { task ->
+                        TaskItem(
+                            task = task,
+                            onDelete = { taskViewModel.delete(task) },
+                            onEdit = { taskToEdit = task; showDialog = true }
+                        )
+                    }
                 }
             }
         }
@@ -147,11 +115,7 @@ fun TaskManagerScreen(
                 departments = departments.map { it.department },
                 onDismiss = { showDialog = false },
                 onSave = { taskToSave ->
-                    if (taskToEdit == null) {
-                        taskViewModel.insert(taskToSave)
-                    } else {
-                        taskViewModel.update(taskToSave)
-                    }
+                    if (taskToEdit == null) taskViewModel.insert(taskToSave) else taskViewModel.update(taskToSave)
                     showDialog = false
                 }
             )
@@ -160,34 +124,72 @@ fun TaskManagerScreen(
 }
 
 @Composable
+private fun EmptyState() {
+    Box(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Icon(Icons.Default.TaskAlt, contentDescription = null, modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.primary)
+            Text(
+                text = "No Tasks Yet",
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "Tap the '+' button to add a new task and get organized.",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
 fun TaskItem(task: Task, onDelete: () -> Unit, onEdit: () -> Unit) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onEdit)
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = task.title, style = MaterialTheme.typography.titleMedium)
-                task.departmentName?.let {
-                    Text(text = "For: $it", style = MaterialTheme.typography.bodySmall)
+        Row {
+            Box(modifier = Modifier.width(6.dp).fillMaxHeight().background(MaterialTheme.colorScheme.primary)) {}
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = task.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    if (task.departmentName != null) {
+                        ChipView(text = task.departmentName)
+                    }
+                    Text(text = task.description, style = MaterialTheme.typography.bodyLarge)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Schedule, contentDescription = "Due date", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = SimpleDateFormat("EEE, MMM d, yyyy 'at' h:mm a", Locale.getDefault()).format(Date(task.dueDate)),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
-                Text(text = task.description, style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    text = "Due: ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(task.dueDate))}",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete Task")
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete Task", tint = MaterialTheme.colorScheme.error)
+                }
             }
         }
+    }
+}
+
+@Composable
+fun ChipView(text: String) {
+    Box(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), shape = RoundedCornerShape(50))
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(text = text, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
     }
 }
 
@@ -200,13 +202,11 @@ fun TaskDialog(
     onSave: (Task) -> Unit
 ) {
     var title by remember { mutableStateOf(task?.title ?: "") }
-    var description by remember { mutableStateOf(task?.description ?: "") }
+    var description by remember(task) { mutableStateOf(task?.description ?: "") }
     var expanded by remember { mutableStateOf(false) }
     var selectedDepartment by remember { mutableStateOf(task?.departmentName) }
 
-    val initialDateTime = Calendar.getInstance().apply {
-        if (task != null) timeInMillis = task.dueDate else timeInMillis = System.currentTimeMillis()
-    }
+    val initialDateTime = remember(task) { Calendar.getInstance().apply { if (task != null) timeInMillis = task.dueDate else timeInMillis = System.currentTimeMillis() } }
     var pickedDate by remember { mutableStateOf(initialDateTime.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()) }
     var pickedTime by remember { mutableStateOf(initialDateTime.toInstant().atZone(ZoneId.systemDefault()).toLocalTime()) }
 
@@ -214,80 +214,42 @@ fun TaskDialog(
     val timeDialogState = rememberMaterialDialogState()
 
     Dialog(onDismissRequest = onDismiss) {
-        Card {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth()
-            ) {
-                Text(text = if (task == null) "Add Task" else "Edit Task", style = MaterialTheme.typography.titleLarge)
-                Spacer(modifier = Modifier.height(16.dp))
-                TextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Title") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                TextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Description") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+        Card(shape = RoundedCornerShape(16.dp)) {
+            Column(modifier = Modifier.padding(24.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(text = if (task == null) "Add New Task" else "Edit Task", style = MaterialTheme.typography.headlineMedium)
 
-                Box {
-                    TextButton(onClick = { expanded = true }) {
-                        Text(selectedDepartment ?: "Select Department")
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Department")
+                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Task Title") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Task Description") }, modifier = Modifier.fillMaxWidth())
+
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
+                        Text(selectedDepartment ?: "Assign to Department")
+                        Spacer(Modifier.weight(1f))
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
                     }
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.fillMaxWidth()) {
                         departments.forEach {
                             DropdownMenuItem(text = { Text(it.name) }, onClick = { selectedDepartment = it.name; expanded = false })
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                val finalDateTime = remember(pickedDate, pickedTime) { Calendar.getInstance().apply { set(pickedDate.year, pickedDate.monthValue - 1, pickedDate.dayOfMonth, pickedTime.hour, pickedTime.minute) } }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { dateDialogState.show() }) { Text("Select Date") }
-                    Button(onClick = { timeDialogState.show() }) { Text("Select Time") }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                    TextButton(onClick = { dateDialogState.show() }) { Text(SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(finalDateTime.time)) }
+                    TextButton(onClick = { timeDialogState.show() }) { Text(SimpleDateFormat("h:mm a", Locale.getDefault()).format(finalDateTime.time)) }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
 
-                val finalDateTime = Calendar.getInstance().apply {
-                    set(pickedDate.year, pickedDate.monthValue - 1, pickedDate.dayOfMonth, pickedTime.hour, pickedTime.minute)
-                }
-                Text(
-                    text = "Due: ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(finalDateTime.time)}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text("Cancel") }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(onClick = {
                         val taskToSave = task?.copy(
-                            title = title,
-                            description = description,
-                            dueDate = finalDateTime.timeInMillis,
-                            departmentName = selectedDepartment
-                        ) ?: Task(
-                            title = title,
-                            description = description,
-                            dueDate = finalDateTime.timeInMillis,
-                            departmentName = selectedDepartment
-                        )
+                            title = title, description = description, dueDate = finalDateTime.timeInMillis, departmentName = selectedDepartment
+                        ) ?: Task(title = title, description = description, dueDate = finalDateTime.timeInMillis, departmentName = selectedDepartment)
                         onSave(taskToSave)
-                    }) {
-                        Text("Save")
-                    }
+                    }) { Text("Save") }
                 }
             }
         }
