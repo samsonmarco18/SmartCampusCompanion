@@ -1,13 +1,17 @@
 package com.example.smartcampuscompanion.ui.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.smartcampuscompanion.ui.announcements.AnnouncementsScreen
 import com.example.smartcampuscompanion.ui.campus_info.CampusInfoScreen
+import com.example.smartcampuscompanion.ui.campus_info.CampusViewModel
 import com.example.smartcampuscompanion.ui.campus_map.CampusMapScreen
 import com.example.smartcampuscompanion.ui.dashboard.DashboardScreen
 import com.example.smartcampuscompanion.ui.grades.GradesScreen
@@ -27,11 +31,13 @@ sealed class Screen(val route: String) {
     object Profile : Screen("profile")
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavigation() {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
     val navController = rememberNavController()
+    val campusViewModel: CampusViewModel = viewModel()
     val startDestination = if (sessionManager.fetchAuthToken() != null) {
         Screen.Dashboard.route
     } else {
@@ -63,14 +69,15 @@ fun AppNavigation() {
                 onNavigateToGrades = { navController.navigate(Screen.Grades.route) },
                 onNavigateToCampusMap = { navController.navigate(Screen.CampusMap.route) },
                 onNavigateToNotifications = { navController.navigate(Screen.Announcements.route) },
-                onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                campusViewModel = campusViewModel
             )
         }
         composable(Screen.CampusInfo.route) {
-            CampusInfoScreen(onNavigateUp = { navController.navigateUp() })
+            CampusInfoScreen(viewModel = campusViewModel, onNavigateUp = { navController.navigateUp() })
         }
         composable(Screen.TaskManager.route) {
-            TaskManagerScreen(onNavigateUp = { navController.navigateUp() })
+            TaskManagerScreen(campusViewModel = campusViewModel, onNavigateUp = { navController.navigateUp() })
         }
         composable(Screen.Announcements.route) {
             AnnouncementsScreen()

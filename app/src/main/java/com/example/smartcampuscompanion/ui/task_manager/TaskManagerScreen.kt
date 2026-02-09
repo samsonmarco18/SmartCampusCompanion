@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,9 +18,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -36,11 +40,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartcampuscompanion.data.Task
+import com.example.smartcampuscompanion.ui.campus_info.CampusViewModel
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
@@ -56,10 +62,17 @@ import java.util.Locale
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskManagerScreen(viewModel: TaskViewModel = viewModel(), onNavigateUp: () -> Unit) {
-    val tasks by viewModel.tasks.collectAsState()
+fun TaskManagerScreen(
+    taskViewModel: TaskViewModel = viewModel(),
+    campusViewModel: CampusViewModel = viewModel(),
+    onNavigateUp: () -> Unit
+) {
+    val tasks by taskViewModel.tasks.collectAsState()
+    val departments by campusViewModel.departmentsWithStudents.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var taskToEdit by remember { mutableStateOf<Task?>(null) }
+    var expanded by remember { mutableStateOf(false) }
+    var selectedDepartment by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -68,6 +81,30 @@ fun TaskManagerScreen(viewModel: TaskViewModel = viewModel(), onNavigateUp: () -
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    Box {
+                        IconButton(onClick = { expanded = true }) {
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = "Filter by department")
+                        }
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            DropdownMenuItem(text = { Text("All Departments") }, onClick = {
+                                selectedDepartment = null
+                                taskViewModel.setDepartmentFilter(null)
+                                expanded = false
+                            })
+                            departments.forEach {
+                                DropdownMenuItem(text = { Text(it.department.name) }, onClick = {
+                                    selectedDepartment = it.department.name
+                                    taskViewModel.setDepartmentFilter(it.department.name)
+                                    expanded = false
+                                })
+                            }
+                        }
                     }
                 }
             )
@@ -81,34 +118,39 @@ fun TaskManagerScreen(viewModel: TaskViewModel = viewModel(), onNavigateUp: () -
             }
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(tasks) { task ->
-                TaskItem(
-                    task = task,
-                    onDelete = { viewModel.delete(task) },
-                    onEdit = {
-                        taskToEdit = task // Set task to be edited
-                        showDialog = true
-                    }
-                )
+        Column(modifier = Modifier.padding(paddingValues)) {
+            selectedDepartment?.let {
+                Text(text = "Showing tasks for: $it", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(tasks) { task ->
+                    TaskItem(
+                        task = task,
+                        onDelete = { taskViewModel.delete(task) },
+                        onEdit = {
+                            taskToEdit = task // Set task to be edited
+                            showDialog = true
+                        }
+                    )
+                }
             }
         }
 
         if (showDialog) {
             TaskDialog(
                 task = taskToEdit,
+                departments = departments.map { it.department },
                 onDismiss = { showDialog = false },
                 onSave = { taskToSave ->
                     if (taskToEdit == null) {
-                        viewModel.insert(taskToSave)
+                        taskViewModel.insert(taskToSave)
                     } else {
-                        viewModel.update(taskToSave)
+                        taskViewModel.update(taskToSave)
                     }
                     showDialog = false
                 }
@@ -128,10 +170,14 @@ fun TaskItem(task: Task, onDelete: () -> Unit, onEdit: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = task.title, style = MaterialTheme.typography.titleMedium)
+                task.departmentName?.let {
+                    Text(text = "For: $it", style = MaterialTheme.typography.bodySmall)
+                }
                 Text(text = task.description, style = MaterialTheme.typography.bodyMedium)
                 Text(
                     text = "Due: ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(task.dueDate))}",
@@ -149,11 +195,14 @@ fun TaskItem(task: Task, onDelete: () -> Unit, onEdit: () -> Unit) {
 @Composable
 fun TaskDialog(
     task: Task?,
+    departments: List<com.example.smartcampuscompanion.data.Department>,
     onDismiss: () -> Unit,
     onSave: (Task) -> Unit
 ) {
     var title by remember { mutableStateOf(task?.title ?: "") }
     var description by remember { mutableStateOf(task?.description ?: "") }
+    var expanded by remember { mutableStateOf(false) }
+    var selectedDepartment by remember { mutableStateOf(task?.departmentName) }
 
     val initialDateTime = Calendar.getInstance().apply {
         if (task != null) timeInMillis = task.dueDate else timeInMillis = System.currentTimeMillis()
@@ -188,6 +237,20 @@ fun TaskDialog(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
+                Box {
+                    TextButton(onClick = { expanded = true }) {
+                        Text(selectedDepartment ?: "Select Department")
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Department")
+                    }
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        departments.forEach {
+                            DropdownMenuItem(text = { Text(it.name) }, onClick = { selectedDepartment = it.name; expanded = false })
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = { dateDialogState.show() }) { Text("Select Date") }
                     Button(onClick = { timeDialogState.show() }) { Text("Select Time") }
@@ -213,11 +276,13 @@ fun TaskDialog(
                         val taskToSave = task?.copy(
                             title = title,
                             description = description,
-                            dueDate = finalDateTime.timeInMillis
+                            dueDate = finalDateTime.timeInMillis,
+                            departmentName = selectedDepartment
                         ) ?: Task(
                             title = title,
                             description = description,
-                            dueDate = finalDateTime.timeInMillis
+                            dueDate = finalDateTime.timeInMillis,
+                            departmentName = selectedDepartment
                         )
                         onSave(taskToSave)
                     }) {

@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [Task::class, Department::class, Student::class],
-    version = 9, // Incremented to force recreation of the database
+    version = 10, // Incremented to update the schema
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
