@@ -5,19 +5,30 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartcampuscompanion.data.AppDatabase
 import com.example.smartcampuscompanion.data.Task
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class TaskViewModel(application: Application) : AndroidViewModel(application) {
+
     private val taskDao = AppDatabase.getDatabase(application).taskDao()
 
-    val tasks = taskDao.getAllTasks()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    private val _selectedDepartment = MutableStateFlow<String?>(null)
+
+    val tasks: StateFlow<List<Task>> = _selectedDepartment.flatMapLatest { department ->
+        if (department == null) {
+            taskDao.getAllTasks()
+        } else {
+            taskDao.getTasksByDepartment(department)
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun setDepartmentFilter(departmentName: String?) {
+        _selectedDepartment.value = departmentName
+    }
 
     fun insert(task: Task) = viewModelScope.launch {
         taskDao.insert(task)

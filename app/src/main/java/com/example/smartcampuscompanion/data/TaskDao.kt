@@ -12,6 +12,9 @@ interface TaskDao {
     @Query("SELECT * FROM tasks ORDER BY dueDate ASC")
     fun getAllTasks(): Flow<List<Task>>
 
+    @Query("SELECT * FROM tasks WHERE departmentName = :departmentName ORDER BY dueDate ASC")
+    fun getTasksByDepartment(departmentName: String): Flow<List<Task>>
+
     @Insert
     suspend fun insert(task: Task)
 
