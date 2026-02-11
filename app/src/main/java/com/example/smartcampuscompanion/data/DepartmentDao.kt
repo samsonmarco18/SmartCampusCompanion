@@ -17,10 +17,29 @@ interface DepartmentDao {
     suspend fun insertStudents(students: List<Student>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertGrades(grades: List<Grade>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStudent(student: Student)
 
     @Delete
     suspend fun deleteStudent(student: Student)
+
+    @Query("DELETE FROM departments")
+    suspend fun clearDepartments()
+
+    @Query("DELETE FROM students")
+    suspend fun clearStudents()
+
+    @Query("DELETE FROM grades")
+    suspend fun clearGrades()
+
+    @Transaction
+    suspend fun prePopulate() {
+        clearDepartments()
+        clearStudents()
+        clearGrades()
+    }
 
     @Transaction
     @Query("SELECT * FROM departments")

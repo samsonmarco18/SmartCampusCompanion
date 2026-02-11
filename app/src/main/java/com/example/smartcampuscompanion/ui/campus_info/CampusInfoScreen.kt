@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartcampuscompanion.data.DepartmentWithStudents
 import com.example.smartcampuscompanion.data.Student
+import com.example.smartcampuscompanion.data.StudentWithGrades
 
 val departmentColors = listOf(
     Color(0xFFFADBD8),
@@ -159,8 +160,8 @@ fun DepartmentCard(
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    department.students.forEach { student ->
-                        StudentRow(student) { viewModel.dropStudent(it) }
+                    department.students.forEach { studentWithGrades ->
+                        StudentRow(studentWithGrades.student) { viewModel.dropStudent(it) }
                     }
                 }
             }
