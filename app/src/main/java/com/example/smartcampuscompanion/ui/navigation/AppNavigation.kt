@@ -83,7 +83,7 @@ fun AppNavigation() {
             AnnouncementsScreen()
         }
         composable(Screen.Grades.route) {
-            GradesScreen()
+            GradesScreen(onNavigateUp = { navController.navigateUp() })
         }
         composable(Screen.CampusMap.route) {
             CampusMapScreen()

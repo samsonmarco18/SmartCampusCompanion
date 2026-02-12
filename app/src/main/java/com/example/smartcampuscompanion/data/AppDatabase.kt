@@ -4,10 +4,14 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Database(
-    entities = [Task::class, Department::class, Student::class],
-    version = 10, // Incremented to update the schema
+    entities = [Task::class, Department::class, Student::class, Grade::class],
+    version = 1, // Resetting version for the new database
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -24,7 +28,7 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "smart_campus_companion_database"
+                    "smart_campus_companion_database_v2" // Changed database name
                 )
                     .fallbackToDestructiveMigration()
                     .build()

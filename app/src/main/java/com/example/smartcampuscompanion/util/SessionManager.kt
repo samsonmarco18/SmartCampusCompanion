@@ -2,18 +2,19 @@ package com.example.smartcampuscompanion.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 
 class SessionManager(context: Context) {
-    private var prefs: SharedPreferences = context.getSharedPreferences("SmartCampusCompanion", Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = context.getSharedPreferences("SmartCampusCompanion", Context.MODE_PRIVATE)
 
     companion object {
         const val USER_TOKEN = "user_token"
     }
 
     fun saveAuthToken(token: String) {
-        val editor = prefs.edit()
-        editor.putString(USER_TOKEN, token)
-        editor.apply()
+        prefs.edit {
+            putString(USER_TOKEN, token)
+        }
     }
 
     fun fetchAuthToken(): String? {
@@ -21,8 +22,8 @@ class SessionManager(context: Context) {
     }
 
     fun clearAuthToken() {
-        val editor = prefs.edit()
-        editor.remove(USER_TOKEN)
-        editor.apply()
+        prefs.edit {
+            remove(USER_TOKEN)
+        }
     }
 }
