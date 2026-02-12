@@ -18,7 +18,11 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,12 +30,17 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,7 +89,8 @@ fun CampusInfoScreen(viewModel: CampusViewModel = viewModel(), onNavigateUp: () 
             itemsIndexed(departmentsWithStudents) { index, department ->
                 DepartmentCard(
                     department = department,
-                    containerColor = departmentColors[index % departmentColors.size]
+                    containerColor = departmentColors[index % departmentColors.size],
+                    viewModel = viewModel
                 )
             }
         }
@@ -88,7 +98,24 @@ fun CampusInfoScreen(viewModel: CampusViewModel = viewModel(), onNavigateUp: () 
 }
 
 @Composable
-fun DepartmentCard(department: DepartmentWithStudents, containerColor: Color) {
+fun DepartmentCard(
+    department: DepartmentWithStudents,
+    containerColor: Color,
+    viewModel: CampusViewModel
+) {
+    var showAddStudentDialog by remember { mutableStateOf(false) }
+
+    if (showAddStudentDialog) {
+        AddStudentDialog(
+            onDismiss = { showAddStudentDialog = false },
+            onAddStudent = {
+                viewModel.addStudent(it)
+                showAddStudentDialog = false
+            },
+            departmentName = department.department.name
+        )
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -118,11 +145,22 @@ fun DepartmentCard(department: DepartmentWithStudents, containerColor: Color) {
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                Text("Students", style = MaterialTheme.typography.titleLarge)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Students", style = MaterialTheme.typography.titleLarge)
+                    Button(onClick = { showAddStudentDialog = true }) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Student")
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Add Student")
+                    }
+                }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     department.students.forEach { student ->
-                        StudentRow(student)
+                        StudentRow(student) { viewModel.dropStudent(it) }
                     }
                 }
             }
@@ -131,7 +169,7 @@ fun DepartmentCard(department: DepartmentWithStudents, containerColor: Color) {
 }
 
 @Composable
-fun StudentRow(student: Student) {
+fun StudentRow(student: Student, onDropStudent: (Student) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -151,7 +189,7 @@ fun StudentRow(student: Student) {
             )
         }
         Spacer(modifier = Modifier.width(16.dp))
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = student.name,
                 style = MaterialTheme.typography.titleMedium
@@ -162,10 +200,94 @@ fun StudentRow(student: Student) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = student.yearLevel,
+                text = "${student.yearLevel} - ${student.status}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        IconButton(onClick = { onDropStudent(student) }) {
+            Icon(Icons.Default.Delete, contentDescription = "Drop Student", tint = MaterialTheme.colorScheme.error)
+        }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddStudentDialog(
+    onDismiss: () -> Unit,
+    onAddStudent: (Student) -> Unit,
+    departmentName: String
+) {
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var yearLevel by remember { mutableStateOf("") }
+    var status by remember { mutableStateOf("Regular") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add New Student") },
+        text = {
+            Column {
+                TextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                TextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                TextField(
+                    value = yearLevel,
+                    onValueChange = { yearLevel = it },
+                    label = { Text("Year Level") }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Status:")
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(
+                            selected = status == "Regular",
+                            onClick = { status = "Regular" }
+                        )
+                        Text("Regular")
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(
+                            selected = status == "Irregular",
+                            onClick = { status = "Irregular" }
+                        )
+                        Text("Irregular")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val newStudent = Student(
+                        name = name,
+                        email = email,
+                        yearLevel = yearLevel,
+                        departmentName = departmentName,
+                        status = status
+                    )
+                    onAddStudent(newStudent)
+                },
+                enabled = name.isNotBlank() && email.isNotBlank() && yearLevel.isNotBlank()
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }

@@ -9,6 +9,14 @@ class CampusRepository(private val departmentDao: DepartmentDao) {
         return departmentDao.getDepartmentsWithStudents()
     }
 
+    suspend fun addStudent(student: Student) {
+        departmentDao.insertStudent(student)
+    }
+
+    suspend fun dropStudent(student: Student) {
+        departmentDao.deleteStudent(student)
+    }
+
     suspend fun checkAndPopulate() {
         // This check ensures we only populate the database once.
         if (departmentDao.getDepartmentsWithStudents().first().isEmpty()) {

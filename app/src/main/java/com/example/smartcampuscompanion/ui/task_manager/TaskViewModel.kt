@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartcampuscompanion.data.AppDatabase
 import com.example.smartcampuscompanion.data.Task
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +19,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _selectedDepartment = MutableStateFlow<String?>(null)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val tasks: StateFlow<List<Task>> = _selectedDepartment.flatMapLatest { department ->
         if (department == null) {
             taskDao.getAllTasks()

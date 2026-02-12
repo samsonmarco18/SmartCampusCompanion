@@ -23,5 +23,6 @@ data class Student(
     val name: String,
     val email: String,
     val yearLevel: String,
-    val departmentName: String
+    val departmentName: String,
+    val status: String = "Regular"
 )
