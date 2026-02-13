@@ -9,7 +9,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.smartcampuscompanion.ui.Setting.SettingScreen
 import com.example.smartcampuscompanion.ui.announcements.AnnouncementsScreen
 import com.example.smartcampuscompanion.ui.campus_info.CampusInfoScreen
 import com.example.smartcampuscompanion.ui.campus_info.CampusViewModel
@@ -95,7 +94,7 @@ fun AppNavigation() {
             ProfileScreen()
         }
         composable(Screen.Settings.route) {
-            SettingScreen(onNavigateUp = { navController.navigateUp() })
+            // TODO: Create SettingsScreen
         }
     }
 }
