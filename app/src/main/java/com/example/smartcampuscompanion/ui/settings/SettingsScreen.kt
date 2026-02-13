@@ -25,11 +25,12 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    isDarkMode: Boolean,
+    onToggleDarkMode: (Boolean) -> Unit,
     onNavigateUp: () -> Unit,
     onLogout: () -> Unit
 ) {
     var notificationsEnabled by remember { mutableStateOf(true) }
-    var darkModeEnabled by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -80,8 +81,8 @@ fun SettingsScreen(
                         title = "Dark Mode",
                         subtitle = "System-wide dark theme",
                         icon = Icons.Default.Brightness4,
-                        checked = darkModeEnabled,
-                        onCheckedChange = { darkModeEnabled = it }
+                        checked = isDarkMode,
+                        onCheckedChange = onToggleDarkMode
                     )
                     SettingsClickableItem(
                         title = "Language",

@@ -35,7 +35,10 @@ sealed class Screen(val route: String) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    isDarkMode: Boolean,
+    onToggleDarkMode: (Boolean) -> Unit
+) {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
     val navController = rememberNavController()
@@ -98,6 +101,8 @@ fun AppNavigation() {
         }
         composable(Screen.Settings.route) {
             SettingsScreen(
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onNavigateUp = { navController.navigateUp() },
                 onLogout = onLogout
             )
