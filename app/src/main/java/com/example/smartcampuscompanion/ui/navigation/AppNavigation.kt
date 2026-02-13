@@ -35,7 +35,10 @@ sealed class Screen(val route: String) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    isDarkMode: Boolean,
+    onToggleDarkMode: (Boolean) -> Unit
+) {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
     val navController = rememberNavController()
@@ -44,6 +47,15 @@ fun AppNavigation() {
         Screen.Dashboard.route
     } else {
         Screen.Login.route
+    }
+
+    val onLogout = {
+        sessionManager.clearAuthToken()
+        navController.navigate(Screen.Login.route) {
+            popUpTo(0) { // Clear entire backstack on logout
+                inclusive = true
+            }
+        }
     }
 
     NavHost(navController = navController, startDestination = startDestination) {
@@ -58,14 +70,7 @@ fun AppNavigation() {
         }
         composable(Screen.Dashboard.route) {
             DashboardScreen(
-                onLogout = {
-                    sessionManager.clearAuthToken()
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Dashboard.route) {
-                            inclusive = true
-                        }
-                    }
-                },
+                onLogout = onLogout,
                 onNavigateToCampusInfo = { navController.navigate(Screen.CampusInfo.route) },
                 onNavigateToSchedule = { navController.navigate(Screen.TaskManager.route) },
                 onNavigateToGrades = { navController.navigate(Screen.Grades.route) },
@@ -95,7 +100,12 @@ fun AppNavigation() {
             ProfileScreen()
         }
         composable(Screen.Settings.route) {
-            SettingsScreen(onNavigateUp = { navController.navigateUp() })
+            SettingsScreen(
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
+                onNavigateUp = { navController.navigateUp() },
+                onLogout = onLogout
+            )
         }
     }
 }

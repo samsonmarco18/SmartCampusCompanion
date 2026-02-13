@@ -9,6 +9,7 @@ class SessionManager(context: Context) {
 
     companion object {
         const val USER_TOKEN = "user_token"
+        const val DARK_MODE = "dark_mode"
     }
 
     fun saveAuthToken(token: String) {
@@ -25,5 +26,15 @@ class SessionManager(context: Context) {
         prefs.edit {
             remove(USER_TOKEN)
         }
+    }
+
+    fun setDarkMode(enabled: Boolean) {
+        prefs.edit {
+            putBoolean(DARK_MODE, enabled)
+        }
+    }
+
+    fun isDarkMode(): Boolean {
+        return prefs.getBoolean(DARK_MODE, false)
     }
 }

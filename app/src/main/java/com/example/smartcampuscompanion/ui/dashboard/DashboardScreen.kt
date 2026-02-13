@@ -49,7 +49,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartcampuscompanion.ui.campus_info.CampusViewModel
@@ -88,7 +87,6 @@ fun DashboardScreen(
         DashboardItem("Campus Map", Icons.Default.Map, onNavigateToCampusMap),
         DashboardItem("Announcements", Icons.Default.Notifications, onNavigateToNotifications),
         DashboardItem("Profile", Icons.Default.Person, onNavigateToProfile),
-        DashboardItem("Settings", Icons.Default.Settings, onNavigateToSettings)
     )
 
     ModalNavigationDrawer(
@@ -156,6 +154,16 @@ fun DashboardScreen(
                         scope.launch { drawerState.close() }
                     },
                     icon = { Icon(Icons.Default.Person, null) }
+                )
+                HorizontalDivider()
+                NavigationDrawerItem(
+                    label = { Text("Settings") },
+                    selected = false,
+                    onClick = {
+                        onNavigateToSettings()
+                        scope.launch { drawerState.close() }
+                    },
+                    icon = { Icon(Icons.Default.Settings, null) }
                 )
                 NavigationDrawerItem(
                     label = { Text("Logout") },
