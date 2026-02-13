@@ -46,6 +46,15 @@ fun AppNavigation() {
         Screen.Login.route
     }
 
+    val onLogout = {
+        sessionManager.clearAuthToken()
+        navController.navigate(Screen.Login.route) {
+            popUpTo(0) { // Clear entire backstack on logout
+                inclusive = true
+            }
+        }
+    }
+
     NavHost(navController = navController, startDestination = startDestination) {
         composable(Screen.Login.route) {
             LoginScreen(onLoginSuccess = {
@@ -58,14 +67,7 @@ fun AppNavigation() {
         }
         composable(Screen.Dashboard.route) {
             DashboardScreen(
-                onLogout = {
-                    sessionManager.clearAuthToken()
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Dashboard.route) {
-                            inclusive = true
-                        }
-                    }
-                },
+                onLogout = onLogout,
                 onNavigateToCampusInfo = { navController.navigate(Screen.CampusInfo.route) },
                 onNavigateToSchedule = { navController.navigate(Screen.TaskManager.route) },
                 onNavigateToGrades = { navController.navigate(Screen.Grades.route) },
@@ -95,7 +97,10 @@ fun AppNavigation() {
             ProfileScreen()
         }
         composable(Screen.Settings.route) {
-            SettingsScreen(onNavigateUp = { navController.navigateUp() })
+            SettingsScreen(
+                onNavigateUp = { navController.navigateUp() },
+                onLogout = onLogout
+            )
         }
     }
 }
