@@ -44,24 +44,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartcampuscompanion.data.DepartmentWithStudents
 import com.example.smartcampuscompanion.data.Student
-import com.example.smartcampuscompanion.data.StudentWithGrades
-
-val departmentColors = listOf(
-    Color(0xFFFADBD8),
-    Color(0xFFEBDEF0),
-    Color(0xFFD6EAF8),
-    Color(0xFFD1F2EB),
-    Color(0xFFFCF3CF),
-    Color(0xFFFDEBD0),
-    Color(0xFFE5E7E9),
-    Color(0xFFE8DAEF)
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,10 +74,9 @@ fun CampusInfoScreen(viewModel: CampusViewModel = viewModel(), onNavigateUp: () 
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            itemsIndexed(departmentsWithStudents) { index, department ->
+            itemsIndexed(departmentsWithStudents) { _, department ->
                 DepartmentCard(
                     department = department,
-                    containerColor = departmentColors[index % departmentColors.size],
                     viewModel = viewModel
                 )
             }
@@ -101,7 +87,6 @@ fun CampusInfoScreen(viewModel: CampusViewModel = viewModel(), onNavigateUp: () 
 @Composable
 fun DepartmentCard(
     department: DepartmentWithStudents,
-    containerColor: Color,
     viewModel: CampusViewModel
 ) {
     var showAddStudentDialog by remember { mutableStateOf(false) }
@@ -120,19 +105,20 @@ fun DepartmentCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f))
                     .padding(16.dp)
             ) {
                 Text(
                     text = department.department.name,
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
