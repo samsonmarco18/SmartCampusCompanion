@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
@@ -15,9 +16,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,7 +34,7 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            LargeTopAppBar(
                 title = { Text("Settings") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
@@ -41,7 +44,12 @@ fun SettingsScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
+                actions = {
+                    IconButton(onClick = { /* TODO: Search settings */ }) {
+                        Icon(Icons.Default.Search, contentDescription = "Search Settings")
+                    }
+                },
+                colors = TopAppBarDefaults.largeTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface,
                 )
@@ -51,108 +59,113 @@ fun SettingsScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                .padding(paddingValues),
+            contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             item {
-                UserProfileHeader()
+                UserProfileCard()
             }
 
             item {
-                SettingsSectionTitle(title = "General")
-            }
-            item {
-                SettingsToggleItem(
-                    title = "Notifications",
-                    subtitle = "Receive campus updates and task reminders",
-                    icon = Icons.Default.Notifications,
-                    checked = notificationsEnabled,
-                    onCheckedChange = { notificationsEnabled = it }
-                )
-            }
-            item {
-                SettingsToggleItem(
-                    title = "Dark Mode",
-                    subtitle = "Enable dark theme for the app",
-                    icon = Icons.Default.Brightness4,
-                    checked = darkModeEnabled,
-                    onCheckedChange = { darkModeEnabled = it }
-                )
-            }
-            item {
-                SettingsClickableItem(
-                    title = "Language",
-                    subtitle = "English (US)",
-                    icon = Icons.Default.Language,
-                    onClick = { /* Navigate to language settings */ }
-                )
+                SettingsGroup(title = "General") {
+                    SettingsToggleItem(
+                        title = "Notifications",
+                        subtitle = "Campus updates and reminders",
+                        icon = Icons.Default.Notifications,
+                        checked = notificationsEnabled,
+                        onCheckedChange = { notificationsEnabled = it }
+                    )
+                    SettingsToggleItem(
+                        title = "Dark Mode",
+                        subtitle = "System-wide dark theme",
+                        icon = Icons.Default.Brightness4,
+                        checked = darkModeEnabled,
+                        onCheckedChange = { darkModeEnabled = it }
+                    )
+                    SettingsClickableItem(
+                        title = "Language",
+                        subtitle = "English (US)",
+                        icon = Icons.Default.Language,
+                        onClick = { /* Navigate to language settings */ }
+                    )
+                }
             }
             
-            item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)) }
-            
             item {
-                SettingsSectionTitle(title = "Account")
-            }
-            item {
-                SettingsClickableItem(
-                    title = "Edit Profile",
-                    subtitle = "Update your personal information",
-                    icon = Icons.Default.Person,
-                    onClick = { /* Navigate to edit profile */ }
-                )
-            }
-            item {
-                SettingsClickableItem(
-                    title = "Privacy & Security",
-                    subtitle = "Manage your account security",
-                    icon = Icons.Default.Lock,
-                    onClick = { /* Navigate to privacy */ }
-                )
-            }
-            item {
-                SettingsClickableItem(
-                    title = "Logout",
-                    subtitle = "Sign out of your account",
-                    icon = Icons.AutoMirrored.Filled.Logout,
-                    iconColor = MaterialTheme.colorScheme.error,
-                    onClick = { showLogoutDialog = true }
-                )
+                SettingsGroup(title = "Account") {
+                    SettingsClickableItem(
+                        title = "Edit Profile",
+                        subtitle = "Personal info and photo",
+                        icon = Icons.Default.Person,
+                        onClick = { /* Navigate to edit profile */ }
+                    )
+                    SettingsClickableItem(
+                        title = "Security",
+                        subtitle = "Password and biometric lock",
+                        icon = Icons.Default.Lock,
+                        onClick = { /* Navigate to privacy */ }
+                    )
+                    SettingsClickableItem(
+                        title = "Storage",
+                        subtitle = "Manage offline data",
+                        icon = Icons.Default.Storage,
+                        onClick = { /* Navigate to storage */ }
+                    )
+                }
             }
 
-            item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)) }
-
             item {
-                SettingsSectionTitle(title = "Support & About")
-            }
-            item {
-                SettingsClickableItem(
-                    title = "Help Center",
-                    subtitle = "FAQs and support contact",
-                    icon = Icons.AutoMirrored.Filled.HelpOutline,
-                    onClick = { /* Navigate to help */ }
-                )
-            }
-            item {
-                SettingsClickableItem(
-                    title = "About",
-                    subtitle = "App version 1.0.0",
-                    icon = Icons.Default.Info,
-                    onClick = { /* Navigate to about */ }
-                )
+                SettingsGroup(title = "Support") {
+                    SettingsClickableItem(
+                        title = "Help Center",
+                        subtitle = "FAQs and support contact",
+                        icon = Icons.AutoMirrored.Filled.HelpOutline,
+                        onClick = { /* Navigate to help */ }
+                    )
+                    SettingsClickableItem(
+                        title = "Feedback",
+                        subtitle = "Help us improve the app",
+                        icon = Icons.Default.Feedback,
+                        onClick = { /* Navigate to feedback */ }
+                    )
+                    SettingsClickableItem(
+                        title = "About",
+                        subtitle = "v1.0.0 (Stable Build)",
+                        icon = Icons.Default.Info,
+                        onClick = { /* Navigate to about */ }
+                    )
+                }
             }
             
             item {
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedButton(
+                    onClick = { showLogoutDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Logout from Account")
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
                 Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Smart Campus Companion v1.0.0",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "Made with ♥ by Campus Tech",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                 }
-                Spacer(modifier = Modifier.height(32.dp))
             }
         }
 
@@ -160,13 +173,16 @@ fun SettingsScreen(
             AlertDialog(
                 onDismissRequest = { showLogoutDialog = false },
                 title = { Text("Logout") },
-                text = { Text("Are you sure you want to logout?") },
+                text = { Text("Are you sure you want to logout? You will need to sign in again to access your data.") },
                 confirmButton = {
-                    TextButton(onClick = {
-                        showLogoutDialog = false
-                        onLogout()
-                    }) {
-                        Text("Logout", color = MaterialTheme.colorScheme.error)
+                    Button(
+                        onClick = {
+                            showLogoutDialog = false
+                            onLogout()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Logout")
                     }
                 },
                 dismissButton = {
@@ -180,52 +196,84 @@ fun SettingsScreen(
 }
 
 @Composable
-fun UserProfileHeader() {
-    Row(
+fun UserProfileCard() {
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp
     ) {
-        Box(
+        Row(
             modifier = Modifier
-                .size(64.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Column {
-            Text(
-                text = "Student User",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "student@campus.edu",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "JD",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "John Doe",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Computer Science • Senior",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            IconButton(onClick = { /* Edit profile */ }) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Edit Profile",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }
 
 @Composable
-fun SettingsSectionTitle(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-    )
+fun SettingsGroup(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(modifier = Modifier.padding(top = 8.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+        )
+        Surface(
+            modifier = Modifier
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 1.dp
+        ) {
+            Column {
+                content()
+            }
+        }
+    }
 }
 
 @Composable
@@ -237,16 +285,33 @@ fun SettingsToggleItem(
     onCheckedChange: (Boolean) -> Unit
 ) {
     ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = { Text(subtitle) },
-        leadingContent = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+        headlineContent = { Text(title, fontWeight = FontWeight.Medium) },
+        supportingContent = { Text(subtitle, fontSize = 12.sp) },
+        leadingContent = { 
+            Icon(
+                icon, 
+                contentDescription = null, 
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            ) 
+        },
         trailingContent = {
             Switch(
                 checked = checked,
-                onCheckedChange = onCheckedChange
+                onCheckedChange = onCheckedChange,
+                thumbContent = if (checked) {
+                    {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(SwitchDefaults.IconSize),
+                        )
+                    }
+                } else null
             )
         },
-        modifier = Modifier.clickable { onCheckedChange(!checked) }
+        modifier = Modifier.clickable { onCheckedChange(!checked) },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
     )
 }
 
@@ -255,14 +320,29 @@ fun SettingsClickableItem(
     title: String,
     subtitle: String,
     icon: ImageVector,
-    iconColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary,
+    iconColor: Color = MaterialTheme.colorScheme.primary,
     onClick: () -> Unit
 ) {
     ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = { Text(subtitle) },
-        leadingContent = { Icon(icon, contentDescription = null, tint = iconColor) },
-        trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) },
-        modifier = Modifier.clickable(onClick = onClick)
+        headlineContent = { Text(title, fontWeight = FontWeight.Medium) },
+        supportingContent = { Text(subtitle, fontSize = 12.sp) },
+        leadingContent = { 
+            Icon(
+                icon, 
+                contentDescription = null, 
+                tint = iconColor,
+                modifier = Modifier.size(24.dp)
+            ) 
+        },
+        trailingContent = { 
+            Icon(
+                Icons.Default.ChevronRight, 
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+            ) 
+        },
+        modifier = Modifier.clickable(onClick = onClick),
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
     )
 }
