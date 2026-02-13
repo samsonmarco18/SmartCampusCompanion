@@ -17,6 +17,7 @@ import com.example.smartcampuscompanion.ui.dashboard.DashboardScreen
 import com.example.smartcampuscompanion.ui.grades.GradesScreen
 import com.example.smartcampuscompanion.ui.login.LoginScreen
 import com.example.smartcampuscompanion.ui.profile.ProfileScreen
+import com.example.smartcampuscompanion.ui.settings.SettingsScreen
 import com.example.smartcampuscompanion.ui.task_manager.TaskManagerScreen
 import com.example.smartcampuscompanion.util.SessionManager
 
@@ -94,7 +95,7 @@ fun AppNavigation() {
             ProfileScreen()
         }
         composable(Screen.Settings.route) {
-            // TODO: Create SettingsScreen
+            SettingsScreen(onNavigateUp = { navController.navigateUp() })
         }
     }
 }
