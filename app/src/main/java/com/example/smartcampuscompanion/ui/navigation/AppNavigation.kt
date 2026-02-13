@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.smartcampuscompanion.ui.Setting.SettingScreen
 import com.example.smartcampuscompanion.ui.announcements.AnnouncementsScreen
 import com.example.smartcampuscompanion.ui.campus_info.CampusInfoScreen
 import com.example.smartcampuscompanion.ui.campus_info.CampusViewModel
@@ -29,6 +30,7 @@ sealed class Screen(val route: String) {
     object Grades : Screen("grades")
     object CampusMap : Screen("campus_map")
     object Profile : Screen("profile")
+    object Settings : Screen("settings")
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -70,6 +72,7 @@ fun AppNavigation() {
                 onNavigateToCampusMap = { navController.navigate(Screen.CampusMap.route) },
                 onNavigateToNotifications = { navController.navigate(Screen.Announcements.route) },
                 onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                 campusViewModel = campusViewModel
             )
         }
@@ -90,6 +93,9 @@ fun AppNavigation() {
         }
         composable(Screen.Profile.route) {
             ProfileScreen()
+        }
+        composable(Screen.Settings.route) {
+            SettingScreen(onNavigateUp = { navController.navigateUp() })
         }
     }
 }
