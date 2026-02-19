@@ -18,11 +18,13 @@ import com.example.smartcampuscompanion.ui.grades.GradesScreen
 import com.example.smartcampuscompanion.ui.login.LoginScreen
 import com.example.smartcampuscompanion.ui.profile.ProfileScreen
 import com.example.smartcampuscompanion.ui.settings.SettingsScreen
+import com.example.smartcampuscompanion.ui.signup.SignUpScreen
 import com.example.smartcampuscompanion.ui.task_manager.TaskManagerScreen
 import com.example.smartcampuscompanion.util.SessionManager
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")
+    object SignUp : Screen("signup")
     object Dashboard : Screen("dashboard")
     object CampusInfo : Screen("campus_info")
     object TaskManager : Screen("task_manager")
@@ -43,14 +45,14 @@ fun AppNavigation(
     val sessionManager = remember { SessionManager(context) }
     val navController = rememberNavController()
     val campusViewModel: CampusViewModel = viewModel()
-    val startDestination = if (sessionManager.fetchAuthToken() != null) {
+    val startDestination = if (sessionManager.fetchUsername() != null) {
         Screen.Dashboard.route
     } else {
         Screen.Login.route
     }
 
     val onLogout = {
-        sessionManager.clearAuthToken()
+        sessionManager.clearUsername()
         navController.navigate(Screen.Login.route) {
             popUpTo(0) { // Clear entire backstack on logout
                 inclusive = true
@@ -60,9 +62,29 @@ fun AppNavigation(
 
     NavHost(navController = navController, startDestination = startDestination) {
         composable(Screen.Login.route) {
-            LoginScreen(onLoginSuccess = {
-                navController.navigate(Screen.Dashboard.route) {
-                    popUpTo(Screen.Login.route) {
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Login.route) {
+                            inclusive = true
+                        }
+                    }
+                },
+                onNavigateToSignUp = {
+                    navController.navigate(Screen.SignUp.route)
+                }
+            )
+        }
+        composable(Screen.SignUp.route) {
+            SignUpScreen(onSignUpSuccess = {
+                navController.navigate(Screen.Login.route) {
+                    popUpTo(Screen.SignUp.route) {
+                        inclusive = true
+                    }
+                }
+            }, onNavigateToLogin = {
+                navController.navigate(Screen.Login.route) {
+                    popUpTo(Screen.SignUp.route) {
                         inclusive = true
                     }
                 }

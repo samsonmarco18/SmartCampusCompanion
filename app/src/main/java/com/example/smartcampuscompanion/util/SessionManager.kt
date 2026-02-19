@@ -8,23 +8,23 @@ class SessionManager(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("SmartCampusCompanion", Context.MODE_PRIVATE)
 
     companion object {
-        const val USER_TOKEN = "user_token"
+        const val USERNAME = "username"
         const val DARK_MODE = "dark_mode"
     }
 
-    fun saveAuthToken(token: String) {
+    fun saveUsername(username: String) {
         prefs.edit {
-            putString(USER_TOKEN, token)
+            putString(USERNAME, username)
         }
     }
 
-    fun fetchAuthToken(): String? {
-        return prefs.getString(USER_TOKEN, null)
+    fun fetchUsername(): String? {
+        return prefs.getString(USERNAME, null)
     }
 
-    fun clearAuthToken() {
+    fun clearUsername() {
         prefs.edit {
-            remove(USER_TOKEN)
+            remove(USERNAME)
         }
     }
 
