@@ -40,7 +40,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         announcementDao.insert(
             Announcement(
                 title = "New Task Added",
-                content = "A new task '${task.title}' has been added to ${task.departmentName ?: "General"}."
+                content = "A new task '${task.title}' has been added to ${task.departmentName ?: "General"}.",
+                type = "ADD"
             )
         )
     }
@@ -50,7 +51,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         announcementDao.insert(
             Announcement(
                 title = "Task Updated",
-                content = "The task '${task.title}' in ${task.departmentName ?: "General"} has been updated."
+                content = "The task '${task.title}' in ${task.departmentName ?: "General"} has been updated.",
+                type = "UPDATE"
             )
         )
     }
@@ -60,7 +62,8 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         announcementDao.insert(
             Announcement(
                 title = "Task Deleted",
-                content = "The task '${task.title}' from ${task.departmentName ?: "General"} has been deleted."
+                content = "The task '${task.title}' from ${task.departmentName ?: "General"} has been deleted.",
+                type = "DELETE"
             )
         )
     }

@@ -9,5 +9,6 @@ data class Announcement(
     val id: Int = 0,
     val title: String,
     val content: String,
+    val type: String, // "ADD", "UPDATE", "DELETE"
     val timestamp: Long = System.currentTimeMillis()
 )

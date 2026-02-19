@@ -11,6 +11,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -71,24 +72,55 @@ fun AnnouncementsScreen(
 
 @Composable
 fun AnnouncementItem(announcement: Announcement) {
+    val backgroundColor = when (announcement.type) {
+        "ADD" -> Color(0xFFE8F5E9) // Light Green
+        "UPDATE" -> Color(0xFFFFFDE7) // Light Yellow
+        "DELETE" -> Color(0xFFFFEBEE) // Light Red
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    val contentColor = when (announcement.type) {
+        "ADD" -> Color(0xFF2E7D32) // Dark Green
+        "UPDATE" -> Color(0xFFFBC02D) // Dark Yellow
+        "DELETE" -> Color(0xFFC62828) // Dark Red
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = backgroundColor
+        )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = announcement.title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = announcement.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = contentColor
+                )
+                Text(
+                    text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(announcement.timestamp)),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = contentColor.copy(alpha = 0.7f)
+                )
+            }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = announcement.content,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = SimpleDateFormat("MMM dd, yyyy - HH:mm", Locale.getDefault()).format(Date(announcement.timestamp)),
+                text = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(announcement.timestamp)),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.outline
             )
