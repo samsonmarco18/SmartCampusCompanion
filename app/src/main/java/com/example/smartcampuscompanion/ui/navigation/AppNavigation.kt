@@ -88,7 +88,7 @@ fun AppNavigation(
             TaskManagerScreen(campusViewModel = campusViewModel, onNavigateUp = { navController.navigateUp() })
         }
         composable(Screen.Announcements.route) {
-            AnnouncementsScreen()
+            AnnouncementsScreen(onNavigateUp = { navController.navigateUp() })
         }
         composable(Screen.Grades.route) {
             GradesScreen(onNavigateUp = { navController.navigateUp() })

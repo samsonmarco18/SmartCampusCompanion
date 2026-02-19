@@ -8,6 +8,7 @@ import com.example.smartcampuscompanion.data.AppDatabase
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class AnnouncementsViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -15,4 +16,8 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
 
     val announcements: StateFlow<List<Announcement>> = announcementDao.getAllAnnouncements()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun markAsRead(announcementId: Int) = viewModelScope.launch {
+        announcementDao.markAsRead(announcementId)
+    }
 }

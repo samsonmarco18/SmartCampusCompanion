@@ -10,5 +10,6 @@ data class Announcement(
     val title: String,
     val content: String,
     val type: String, // "ADD", "UPDATE", "DELETE"
+    val isRead: Boolean = false,
     val timestamp: Long = System.currentTimeMillis()
 )
