@@ -89,7 +89,7 @@ fun AnnouncementItem(
     onClick: () -> Unit
 ) {
     // If it's NOT read, we use grey. If it IS read, we use the type-specific colors.
-    val backgroundColor = if (!announcement.isRead) {
+    val backgroundColor = if (announcement.isRead) {
         Color(0xFFF5F5F5) // Grey for unread
     } else {
         when (announcement.type) {
@@ -100,7 +100,7 @@ fun AnnouncementItem(
         }
     }
 
-    val contentColor = if (!announcement.isRead) {
+    val contentColor = if (announcement.isRead) {
         Color.Gray
     } else {
         when (announcement.type) {
