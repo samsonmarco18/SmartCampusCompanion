@@ -2,6 +2,7 @@ package com.example.smartcampuscompanion.ui.dashboard
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -26,6 +27,8 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DrawerValue
@@ -51,13 +54,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.smartcampuscompanion.ui.announcements.AnnouncementsViewModel
 import com.example.smartcampuscompanion.ui.campus_info.CampusViewModel
 import kotlinx.coroutines.launch
 
 data class DashboardItem(
     val title: String,
     val icon: ImageVector,
-    val onClick: () -> Unit
+    val onClick: () -> Unit,
+    val badgeCount: Int = 0
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,7 +76,8 @@ fun DashboardScreen(
     onNavigateToNotifications: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    campusViewModel: CampusViewModel = viewModel()
+    campusViewModel: CampusViewModel = viewModel(),
+    announcementsViewModel: AnnouncementsViewModel = viewModel()
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -80,12 +86,14 @@ fun DashboardScreen(
     val totalDepartments = departmentsWithStudents.size
     val totalStudents = departmentsWithStudents.sumOf { it.students.size }
 
+    val unreadCount by announcementsViewModel.unreadAnnouncementsCount.collectAsState()
+
     val items = listOf(
         DashboardItem("Campus Info", Icons.Default.Info, onNavigateToCampusInfo),
         DashboardItem("Schedule", Icons.Default.CalendarMonth, onNavigateToSchedule),
         DashboardItem("Grades", Icons.Default.School, onNavigateToGrades),
         DashboardItem("Campus Map", Icons.Default.Map, onNavigateToCampusMap),
-        DashboardItem("Announcements", Icons.Default.Notifications, onNavigateToNotifications),
+        DashboardItem("Announcements", Icons.Default.Notifications, onNavigateToNotifications, badgeCount = unreadCount),
         DashboardItem("Profile", Icons.Default.Person, onNavigateToProfile),
     )
 
@@ -144,7 +152,19 @@ fun DashboardScreen(
                         onNavigateToNotifications()
                         scope.launch { drawerState.close() }
                     },
-                    icon = { Icon(Icons.Default.Notifications, null) }
+                    icon = {
+                        BadgedBox(
+                            badge = {
+                                if (unreadCount > 0) {
+                                    Badge {
+                                        Text(unreadCount.toString())
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Default.Notifications, null)
+                        }
+                    }
                 )
                 NavigationDrawerItem(
                     label = { Text("Profile") },
@@ -271,6 +291,7 @@ fun StatisticCard(title: String, value: String, modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardCard(item: DashboardItem) {
     Card(
@@ -284,12 +305,22 @@ fun DashboardCard(item: DashboardItem) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = item.icon,
-                contentDescription = item.title,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
+            BadgedBox(
+                badge = {
+                    if (item.badgeCount > 0) {
+                        Badge {
+                            Text(item.badgeCount.toString())
+                        }
+                    }
+                }
+            ) {
+                Icon(
+                    imageVector = item.icon,
+                    contentDescription = item.title,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = item.title,
