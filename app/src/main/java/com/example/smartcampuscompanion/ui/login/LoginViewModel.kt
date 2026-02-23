@@ -1,30 +1,38 @@
 package com.example.smartcampuscompanion.ui.login
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.smartcampuscompanion.repository.UserRepository
+import com.example.smartcampuscompanion.data.AppDatabase
+import com.example.smartcampuscompanion.data.CampusRepository
 import com.example.smartcampuscompanion.util.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
 
-class LoginViewModel(private val userRepository: UserRepository, private val sessionManager: SessionManager) : ViewModel() {
+class LoginViewModel(application: Application, private val sessionManager: SessionManager) : AndroidViewModel(application) {
 
+    private val campusRepository: CampusRepository
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState: StateFlow<LoginState> = _loginState
+
+    init {
+        val departmentDao = AppDatabase.getDatabase(application).departmentDao()
+        campusRepository = CampusRepository(departmentDao)
+    }
 
     fun login(username: String, password: String) {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading
-            val user = userRepository.getUser(username.trim())
-            if (user != null) {
+            val student = campusRepository.getStudentByName(username.trim())
+            if (student != null) {
                 val passwordHash = MessageDigest.getInstance("SHA-256")
                     .digest(password.toByteArray())
                     .fold("") { str, it -> str + "%02x".format(it) }
 
-                if (user.passwordHash == passwordHash) {
-                    sessionManager.saveUsername(username.trim())
+                if (student.password == passwordHash) {
+                    sessionManager.saveSession(student.name, student.studentNumber)
                     _loginState.value = LoginState.Success
                 } else {
                     _loginState.value = LoginState.Error("Invalid credentials")

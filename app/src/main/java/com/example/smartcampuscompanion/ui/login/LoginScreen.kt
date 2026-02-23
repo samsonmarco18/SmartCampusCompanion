@@ -1,5 +1,6 @@
 package com.example.smartcampuscompanion.ui.login
 
+import android.app.Application
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
@@ -21,8 +22,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.smartcampuscompanion.repository.UserRepository
-import com.example.smartcampuscompanion.util.SessionManager
 import com.example.smartcampuscompanion.util.ViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,7 +32,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignUp: () -> Unit) {
     var passwordVisible by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
-    val loginViewModel: LoginViewModel = viewModel(factory = ViewModelFactory(UserRepository(context), SessionManager(context)))
+    val loginViewModel: LoginViewModel = viewModel(factory = ViewModelFactory(context.applicationContext as Application))
     val loginState by loginViewModel.loginState.collectAsState()
 
     LaunchedEffect(loginState) {
@@ -153,7 +152,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignUp: () -> Unit) {
                 }
             }
             TextButton(onClick = onNavigateToSignUp) {
-                Text("Don\'t have an account? Sign up")
+                Text("Don't have an account? Sign up")
             }
         }
     }

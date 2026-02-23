@@ -9,7 +9,15 @@ class SessionManager(context: Context) {
 
     companion object {
         const val USERNAME = "username"
+        const val STUDENT_NUMBER = "student_number"
         const val DARK_MODE = "dark_mode"
+    }
+
+    fun saveSession(username: String, studentNumber: String) {
+        prefs.edit {
+            putString(USERNAME, username)
+            putString(STUDENT_NUMBER, studentNumber)
+        }
     }
 
     fun saveUsername(username: String) {
@@ -22,9 +30,14 @@ class SessionManager(context: Context) {
         return prefs.getString(USERNAME, null)
     }
 
-    fun clearUsername() {
+    fun fetchStudentNumber(): String? {
+        return prefs.getString(STUDENT_NUMBER, null)
+    }
+
+    fun clearSession() {
         prefs.edit {
             remove(USERNAME)
+            remove(STUDENT_NUMBER)
         }
     }
 

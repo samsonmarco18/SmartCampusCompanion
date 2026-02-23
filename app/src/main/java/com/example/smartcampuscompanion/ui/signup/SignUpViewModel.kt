@@ -1,34 +1,53 @@
 package com.example.smartcampuscompanion.ui.signup
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.smartcampuscompanion.data.User
-import com.example.smartcampuscompanion.repository.UserRepository
+import com.example.smartcampuscompanion.data.Announcement
+import com.example.smartcampuscompanion.data.AppDatabase
+import com.example.smartcampuscompanion.data.CampusRepository
+import com.example.smartcampuscompanion.data.Student
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
 
-class SignUpViewModel(private val userRepository: UserRepository) : ViewModel() {
+class SignUpViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val campusRepository: CampusRepository
+    private val announcementDao = AppDatabase.getDatabase(application).announcementDao()
     private val _signUpState = MutableStateFlow<SignUpState>(SignUpState.Idle)
     val signUpState: StateFlow<SignUpState> = _signUpState
 
-    fun signUp(username: String, password: String, confirmPassword: String) {
+    init {
+        val departmentDao = AppDatabase.getDatabase(application).departmentDao()
+        campusRepository = CampusRepository(departmentDao)
+    }
+
+    fun signUp(studentNumber: String, username: String, password: String, confirmPassword: String, department: String?, yearLevel: String?) {
         if (password != confirmPassword) {
             _signUpState.value = SignUpState.Error("Passwords do not match")
             return
         }
-        if (username.isBlank() || password.isBlank()) {
-            _signUpState.value = SignUpState.Error("Username and password cannot be empty")
+        if (studentNumber.isBlank() || username.isBlank() || password.isBlank() || department == null || yearLevel == null) {
+            _signUpState.value = SignUpState.Error("All fields must be filled")
             return
         }
 
         viewModelScope.launch {
             _signUpState.value = SignUpState.Loading
-            val existingUser = userRepository.getUser(username)
-            if (existingUser != null) {
-                _signUpState.value = SignUpState.Error("Username already exists")
+            val existingStudent = campusRepository.getStudentByStudentNumber(studentNumber)
+            if (existingStudent != null) {
+                val announcement = Announcement(
+                    title = "Security Alert: Account Validation Required",
+                    content = "Someone attempted to create an account with your student number. Please go to MSID to validate your account and provide a valid ID to prove ownership.",
+                    category = "Urgent",
+                    departmentName = null,
+                    dueDate = System.currentTimeMillis(),
+                    studentNumber = studentNumber
+                )
+                announcementDao.insert(announcement)
+                _signUpState.value = SignUpState.Error("Student number already exists")
                 return@launch
             }
 
@@ -36,8 +55,15 @@ class SignUpViewModel(private val userRepository: UserRepository) : ViewModel() 
                 .digest(password.toByteArray())
                 .fold("") { str, it -> str + "%02x".format(it) }
 
-            val newUser = User(username, passwordHash)
-            userRepository.saveUser(newUser)
+            val newStudent = Student(
+                studentNumber = studentNumber,
+                name = username,
+                password = passwordHash,
+                email = "", // You may want to add an email field to the sign up screen
+                yearLevel = yearLevel,
+                departmentName = department,
+            )
+            campusRepository.addStudent(newStudent)
             _signUpState.value = SignUpState.Success
         }
     }

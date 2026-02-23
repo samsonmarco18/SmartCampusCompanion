@@ -1,10 +1,10 @@
 package com.example.smartcampuscompanion.ui.profile
 
+import android.app.Application
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
@@ -16,16 +16,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.smartcampuscompanion.data.User
-import com.example.smartcampuscompanion.repository.UserRepository
-import com.example.smartcampuscompanion.util.SessionManager
+import com.example.smartcampuscompanion.data.Student
 import com.example.smartcampuscompanion.util.ViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen() {
     val context = LocalContext.current
-    val profileViewModel: ProfileViewModel = viewModel(factory = ViewModelFactory(UserRepository(context), SessionManager(context)))
+    val profileViewModel: ProfileViewModel = viewModel(factory = ViewModelFactory(context.applicationContext as Application))
     val uiState by profileViewModel.uiState.collectAsState()
 
     when (val state = uiState) {
@@ -35,7 +33,7 @@ fun ProfileScreen() {
             }
         }
         is ProfileState.Success -> {
-            ProfileContent(user = state.user, onUpdate = profileViewModel::updateUser)
+            ProfileContent(student = state.student, onUpdate = profileViewModel::updateUser)
         }
         is ProfileState.Error -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -46,9 +44,9 @@ fun ProfileScreen() {
 }
 
 @Composable
-fun ProfileContent(user: User, onUpdate: (String, String, String) -> Unit) {
+fun ProfileContent(student: Student, onUpdate: (String, String, String) -> Unit) {
     var isEditing by remember { mutableStateOf(false) }
-    var newUsername by remember { mutableStateOf(user.username) }
+    var newUsername by remember { mutableStateOf(student.name) }
     var newPassword by remember { mutableStateOf("") }
 
     Scaffold(
@@ -59,8 +57,7 @@ fun ProfileContent(user: User, onUpdate: (String, String, String) -> Unit) {
                 }
             }
         }
-    ) {
-        paddingValues ->
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -73,28 +70,26 @@ fun ProfileContent(user: User, onUpdate: (String, String, String) -> Unit) {
                     onUsernameChange = { newUsername = it },
                     password = newPassword,
                     onPasswordChange = { newPassword = it },
-                    onSave = { onUpdate(user.username, newUsername, newPassword); isEditing = false },
+                    onSave = { onUpdate(student.name, newUsername, newPassword); isEditing = false },
                     onCancel = { isEditing = false }
                 )
             } else {
-                UserProfileView(user = user)
+                UserProfileView(student = student)
             }
         }
     }
 }
 
 @Composable
-fun UserProfileView(user: User) {
+fun UserProfileView(student: Student) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         Icon(Icons.Default.AccountCircle, contentDescription = "User Avatar", modifier = Modifier.size(128.dp))
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = user.username, style = MaterialTheme.typography.headlineMedium)
+        Text(text = student.name, style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(32.dp))
-        ProfileInfoRow(icon = Icons.Default.Person, label = "Username", value = user.username)
-        // This is static for now, but can be made dynamic in the future by fetching from a remote source
-        ProfileInfoRow(icon = Icons.Default.School, label = "Department", value = "Computer Science")
-        // This is static for now, but can be made dynamic in the future by fetching from a remote source
-        ProfileInfoRow(icon = Icons.Default.School, label = "Year Level", value = "3rd Year")
+        ProfileInfoRow(icon = Icons.Default.Person, label = "Username", value = student.name)
+        ProfileInfoRow(icon = Icons.Default.School, label = "Department", value = student.departmentName)
+        ProfileInfoRow(icon = Icons.Default.School, label = "Year Level", value = student.yearLevel)
     }
 }
 

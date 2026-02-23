@@ -19,9 +19,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Announcement
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartcampuscompanion.ui.announcements.AnnouncementsViewModel
 import com.example.smartcampuscompanion.ui.campus_info.CampusViewModel
+import com.example.smartcampuscompanion.ui.navigation.Screen
 import kotlinx.coroutines.launch
 
 data class DashboardItem(
@@ -71,11 +72,11 @@ fun DashboardScreen(
     onLogout: () -> Unit,
     onNavigateToCampusInfo: () -> Unit,
     onNavigateToSchedule: () -> Unit,
-    onNavigateToGrades: () -> Unit,
-    onNavigateToCampusMap: () -> Unit,
+    onNavigateToAnnouncementManager: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToStudentRecord: () -> Unit,
     campusViewModel: CampusViewModel = viewModel(),
     announcementsViewModel: AnnouncementsViewModel = viewModel()
 ) {
@@ -91,10 +92,19 @@ fun DashboardScreen(
     val items = listOf(
         DashboardItem("Campus Info", Icons.Default.Info, onNavigateToCampusInfo),
         DashboardItem("Schedule", Icons.Default.CalendarMonth, onNavigateToSchedule),
-        DashboardItem("Grades", Icons.Default.School, onNavigateToGrades),
-        DashboardItem("Campus Map", Icons.Default.Map, onNavigateToCampusMap),
+        DashboardItem("Student Record", Icons.Default.School, onNavigateToStudentRecord),
+        DashboardItem("Announcement Manager", Icons.Default.Announcement, onNavigateToAnnouncementManager),
         DashboardItem("Announcements", Icons.Default.Notifications, onNavigateToNotifications, badgeCount = unreadCount),
         DashboardItem("Profile", Icons.Default.Person, onNavigateToProfile),
+    )
+
+    val navigationItems = listOf(
+        Screen.CampusInfo,
+        Screen.TaskManager,
+        Screen.StudentRecord,
+        Screen.AnnouncementManager,
+        Screen.Announcements,
+        Screen.Profile,
     )
 
     ModalNavigationDrawer(
@@ -109,72 +119,45 @@ fun DashboardScreen(
                     fontWeight = FontWeight.Bold
                 )
                 HorizontalDivider()
-                NavigationDrawerItem(
-                    label = { Text("Campus Info") },
-                    selected = false,
-                    onClick = { 
-                        onNavigateToCampusInfo()
-                        scope.launch { drawerState.close() }
-                    },
-                    icon = { Icon(Icons.Default.Info, null) }
-                )
-                NavigationDrawerItem(
-                    label = { Text("Schedule") },
-                    selected = false,
-                    onClick = { 
-                        onNavigateToSchedule()
-                        scope.launch { drawerState.close() }
-                    },
-                    icon = { Icon(Icons.Default.CalendarMonth, null) }
-                )
-                NavigationDrawerItem(
-                    label = { Text("Grades") },
-                    selected = false,
-                    onClick = { 
-                        onNavigateToGrades()
-                        scope.launch { drawerState.close() }
-                    },
-                    icon = { Icon(Icons.Default.School, null) }
-                )
-                NavigationDrawerItem(
-                    label = { Text("Campus Map") },
-                    selected = false,
-                    onClick = { 
-                        onNavigateToCampusMap()
-                        scope.launch { drawerState.close() }
-                    },
-                    icon = { Icon(Icons.Default.Map, null) }
-                )
-                NavigationDrawerItem(
-                    label = { Text("Notifications") },
-                    selected = false,
-                    onClick = { 
-                        onNavigateToNotifications()
-                        scope.launch { drawerState.close() }
-                    },
-                    icon = {
-                        BadgedBox(
-                            badge = {
-                                if (unreadCount > 0) {
-                                    Badge {
-                                        Text(unreadCount.toString())
-                                    }
-                                }
+                navigationItems.forEach { screen ->
+                    NavigationDrawerItem(
+                        label = { Text(screen.route.replaceFirstChar { it.uppercase() }) },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            when (screen) {
+                                Screen.CampusInfo -> onNavigateToCampusInfo()
+                                Screen.TaskManager -> onNavigateToSchedule()
+                                Screen.StudentRecord -> onNavigateToStudentRecord()
+                                Screen.AnnouncementManager -> onNavigateToAnnouncementManager()
+                                Screen.Announcements -> onNavigateToNotifications()
+                                Screen.Profile -> onNavigateToProfile()
+                                else -> {}
                             }
-                        ) {
-                            Icon(Icons.Default.Notifications, null)
+                        },
+                        icon = {
+                            when (screen) {
+                                Screen.CampusInfo -> Icon(Icons.Default.Info, null)
+                                Screen.TaskManager -> Icon(Icons.Default.CalendarMonth, null)
+                                Screen.StudentRecord -> Icon(Icons.Default.School, null)
+                                Screen.AnnouncementManager -> Icon(Icons.Default.Announcement, null)
+                                Screen.Announcements -> BadgedBox(
+                                    badge = {
+                                        if (unreadCount > 0) {
+                                            Badge {
+                                                Text(unreadCount.toString())
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    Icon(Icons.Default.Notifications, null)
+                                }
+                                Screen.Profile -> Icon(Icons.Default.Person, null)
+                                else -> {}
+                            }
                         }
-                    }
-                )
-                NavigationDrawerItem(
-                    label = { Text("Profile") },
-                    selected = false,
-                    onClick = { 
-                        onNavigateToProfile()
-                        scope.launch { drawerState.close() }
-                    },
-                    icon = { Icon(Icons.Default.Person, null) }
-                )
+                    )
+                }
                 HorizontalDivider()
                 NavigationDrawerItem(
                     label = { Text("Settings") },

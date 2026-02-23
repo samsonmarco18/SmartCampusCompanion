@@ -2,15 +2,15 @@ package com.example.smartcampuscompanion.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.smartcampuscompanion.data.User
-import com.example.smartcampuscompanion.repository.UserRepository
+import com.example.smartcampuscompanion.data.Student
+import com.example.smartcampuscompanion.data.CampusRepository
 import com.example.smartcampuscompanion.util.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
 
-class ProfileViewModel(private val userRepository: UserRepository, private val sessionManager: SessionManager) : ViewModel() {
+class ProfileViewModel(private val campusRepository: CampusRepository, private val sessionManager: SessionManager) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ProfileState>(ProfileState.Loading)
     val uiState: StateFlow<ProfileState> = _uiState
@@ -23,9 +23,9 @@ class ProfileViewModel(private val userRepository: UserRepository, private val s
         viewModelScope.launch {
             val username = sessionManager.fetchUsername()
             if (username != null) {
-                val user = userRepository.getUser(username)
-                if (user != null) {
-                    _uiState.value = ProfileState.Success(user)
+                val student = campusRepository.getStudentByName(username)
+                if (student != null) {
+                    _uiState.value = ProfileState.Success(student)
                 } else {
                     _uiState.value = ProfileState.Error("User not found")
                 }
@@ -37,26 +37,26 @@ class ProfileViewModel(private val userRepository: UserRepository, private val s
 
     fun updateUser(username: String, newUsername: String, newPassword: String) {
         viewModelScope.launch {
-            val user = userRepository.getUser(username)
-            if (user != null) {
+            val student = campusRepository.getStudentByName(username)
+            if (student != null) {
                 val passwordHash = if (newPassword.isNotBlank()) {
                     MessageDigest.getInstance("SHA-256")
                         .digest(newPassword.toByteArray())
                         .fold("") { str, it -> str + "%02x".format(it) }
                 } else {
-                    user.passwordHash
+                    student.password
                 }
 
-                val updatedUser = user.copy(
-                    username = newUsername,
-                    passwordHash = passwordHash
+                val updatedStudent = student.copy(
+                    name = newUsername,
+                    password = passwordHash
                 )
                 if (username != newUsername) {
-                    userRepository.deleteUser(username)
+                    campusRepository.dropStudent(student)
                 }
-                userRepository.saveUser(updatedUser)
+                campusRepository.addStudent(updatedStudent)
                 sessionManager.saveUsername(newUsername)
-                _uiState.value = ProfileState.Success(updatedUser)
+                _uiState.value = ProfileState.Success(updatedStudent)
             }
         }
     }
@@ -64,6 +64,6 @@ class ProfileViewModel(private val userRepository: UserRepository, private val s
 
 sealed class ProfileState {
     object Loading : ProfileState()
-    data class Success(val user: User) : ProfileState()
+    data class Success(val student: Student) : ProfileState()
     data class Error(val message: String) : ProfileState()
 }

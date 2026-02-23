@@ -18,6 +18,18 @@ class UserRepository(context: Context) {
         return gson.fromJson(userJson, User::class.java)
     }
 
+    fun getUserByStudentNumber(studentNumber: String): User? {
+        val allUsers = sharedPreferences.all
+        for (entry in allUsers.entries) {
+            val userJson = entry.value as String
+            val user = gson.fromJson(userJson, User::class.java)
+            if (user.studentNumber == studentNumber) {
+                return user
+            }
+        }
+        return null
+    }
+
     fun deleteUser(username: String) {
         sharedPreferences.edit().remove(username).apply()
     }
