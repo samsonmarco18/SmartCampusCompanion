@@ -20,44 +20,25 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.smartcampuscompanion.repository.UserRepository
 import com.example.smartcampuscompanion.util.SessionManager
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.example.smartcampuscompanion.util.ViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(onLoginSuccess: () -> Unit) {
+fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignUp: () -> Unit) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var isLoading by remember { mutableStateOf(false) }
-
     val context = LocalContext.current
-    val sessionManager = remember { SessionManager(context) }
-    val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
+    val loginViewModel: LoginViewModel = viewModel(factory = ViewModelFactory(UserRepository(context), SessionManager(context)))
+    val loginState by loginViewModel.loginState.collectAsState()
 
-    // This is a placeholder for a real login function.
-    // In a real application, you would replace this with a call to a ViewModel or a repository
-    // that handles user authentication with a backend server.
-    fun performLogin() {
-        scope.launch {
-            isLoading = true
-            error = null
-            // Simulate network delay
-            delay(1500)
-
-            // Replace this with a real authentication check
-            if (username.trim() == "admin" && password.trim() == "admin123") {
-                // On successful login, save the auth token and navigate to the main screen
-                sessionManager.saveAuthToken("dummy_token")
-                onLoginSuccess()
-            } else {
-                // On failed login, show an error message
-                error = "Invalid credentials"
-            }
-            isLoading = false
+    LaunchedEffect(loginState) {
+        if (loginState is LoginState.Success) {
+            onLoginSuccess()
         }
     }
 
@@ -126,7 +107,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 keyboardActions = KeyboardActions(
                     onDone = {
                         focusManager.clearFocus()
-                        performLogin()
+                        loginViewModel.login(username, password)
                     }
                 ),
                 trailingIcon = {
@@ -143,9 +124,10 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            AnimatedVisibility(visible = error != null) {
+            AnimatedVisibility(visible = loginState is LoginState.Error) {
+                val error = (loginState as? LoginState.Error)?.message ?: ""
                 Text(
-                    text = error ?: "",
+                    text = error,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(top = 8.dp),
                     textAlign = TextAlign.Center
@@ -155,13 +137,13 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { performLogin() },
+                onClick = { loginViewModel.login(username, password) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                enabled = !isLoading
+                enabled = loginState !is LoginState.Loading
             ) {
-                if (isLoading) {
+                if (loginState is LoginState.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = MaterialTheme.colorScheme.onPrimary
@@ -170,9 +152,8 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                     Text("Login")
                 }
             }
-
-            TextButton(onClick = { /* TODO: Handle forgot password */ }) {
-                Text("Forgot Password?")
+            TextButton(onClick = onNavigateToSignUp) {
+                Text("Don\'t have an account? Sign up")
             }
         }
     }

@@ -2,27 +2,39 @@ package com.example.smartcampuscompanion.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 
 class SessionManager(context: Context) {
-    private var prefs: SharedPreferences = context.getSharedPreferences("SmartCampusCompanion", Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = context.getSharedPreferences("SmartCampusCompanion", Context.MODE_PRIVATE)
 
     companion object {
-        const val USER_TOKEN = "user_token"
+        const val USERNAME = "username"
+        const val DARK_MODE = "dark_mode"
     }
 
-    fun saveAuthToken(token: String) {
-        val editor = prefs.edit()
-        editor.putString(USER_TOKEN, token)
-        editor.apply()
+    fun saveUsername(username: String) {
+        prefs.edit {
+            putString(USERNAME, username)
+        }
     }
 
-    fun fetchAuthToken(): String? {
-        return prefs.getString(USER_TOKEN, null)
+    fun fetchUsername(): String? {
+        return prefs.getString(USERNAME, null)
     }
 
-    fun clearAuthToken() {
-        val editor = prefs.edit()
-        editor.remove(USER_TOKEN)
-        editor.apply()
+    fun clearUsername() {
+        prefs.edit {
+            remove(USERNAME)
+        }
+    }
+
+    fun setDarkMode(enabled: Boolean) {
+        prefs.edit {
+            putBoolean(DARK_MODE, enabled)
+        }
+    }
+
+    fun isDarkMode(): Boolean {
+        return prefs.getBoolean(DARK_MODE, false)
     }
 }
