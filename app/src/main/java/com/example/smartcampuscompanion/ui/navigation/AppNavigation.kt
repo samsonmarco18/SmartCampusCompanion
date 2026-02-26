@@ -113,7 +113,7 @@ fun AppNavigation(
             AnnouncementsScreen(onNavigateUp = { navController.navigateUp() })
         }
         composable(Screen.Profile.route) {
-            ProfileScreen()
+            ProfileScreen(onNavigateUp = { navController.navigateUp() })
         }
         composable(Screen.Settings.route) {
             SettingsScreen(
