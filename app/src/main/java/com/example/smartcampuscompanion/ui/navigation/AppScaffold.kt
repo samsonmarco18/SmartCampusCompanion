@@ -28,7 +28,7 @@ fun AppScaffold(
     val currentRoute = navBackStackEntry?.destination?.route
 
     val navigationItems = listOf(
-        Screen.Dashboard, Screen.CampusInfo, Screen.TaskManager, Screen.Announcements, Screen.Grades, Screen.CampusMap, Screen.Profile, Screen.Settings
+        Screen.Dashboard, Screen.CampusInfo, Screen.TaskManager, Screen.Announcements, Screen.AnnouncementManager, Screen.Profile, Screen.Settings, Screen.StudentRecord
     )
 
     ModalNavigationDrawer(

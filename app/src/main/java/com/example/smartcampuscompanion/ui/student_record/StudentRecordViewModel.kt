@@ -1,4 +1,4 @@
-package com.example.smartcampuscompanion.ui.campus_info
+package com.example.smartcampuscompanion.ui.student_record
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -9,9 +9,8 @@ import com.example.smartcampuscompanion.data.DepartmentWithStudents
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
-class CampusViewModel(application: Application) : AndroidViewModel(application) {
+class StudentRecordViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: CampusRepository
 
@@ -20,12 +19,6 @@ class CampusViewModel(application: Application) : AndroidViewModel(application) 
     init {
         val departmentDao = AppDatabase.getDatabase(application).departmentDao()
         repository = CampusRepository(departmentDao)
-
-        // Check and populate the database when the ViewModel is created.
-        viewModelScope.launch {
-            repository.checkAndPopulate()
-        }
-
         departmentsWithStudents = repository.getDepartmentsWithStudents()
             .stateIn(
                 scope = viewModelScope,
