@@ -124,7 +124,7 @@ fun AppNavigation(
             )
         }
         composable(Screen.StudentRecord.route) {
-            StudentRecordScreen()
+            StudentRecordScreen(onBackClick = { navController.navigateUp() })
         }
         composable(Screen.AnnouncementManager.route) {
             AnnouncementManagerScreen(onNavigateUp = { navController.navigateUp() })
