@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.TaskAlt
@@ -27,9 +26,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartcampuscompanion.data.Task
-import com.example.smartcampuscompanion.ui.theme.BeigeBackground
-import com.example.smartcampuscompanion.ui.theme.BeigePrimary
-import com.example.smartcampuscompanion.ui.theme.BeigeSecondary
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
@@ -51,14 +47,16 @@ fun TaskManagerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("To-Do List", color = Color.White) },
+                title = { Text("To-Do List") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BeigePrimary
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },
@@ -68,13 +66,13 @@ fun TaskManagerScreen(
                     taskToEdit = null
                     showDialog = true
                 },
-                containerColor = BeigePrimary,
-                contentColor = Color.White
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Task")
             }
         },
-        containerColor = BeigeBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             if (tasks.isEmpty()) {
@@ -83,7 +81,7 @@ fun TaskManagerScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(tasks, key = { it.id }) { task ->
                         TaskItem(
@@ -116,18 +114,23 @@ private fun EmptyState() {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Icon(Icons.Default.TaskAlt, contentDescription = null, modifier = Modifier.size(80.dp), tint = BeigePrimary.copy(alpha = 0.4f))
+            Icon(
+                Icons.Default.TaskAlt, 
+                contentDescription = null, 
+                modifier = Modifier.size(80.dp), 
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+            )
             Text(
                 text = "No Tasks Yet",
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
-                color = BeigeSecondary
+                color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 text = "Tap the '+' button to add a new task and get organized.",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )
         }
     }
@@ -137,28 +140,50 @@ private fun EmptyState() {
 fun TaskItem(task: Task, onDelete: () -> Unit, onEdit: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit),
-        shape = RoundedCornerShape(4.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-            Box(modifier = Modifier.width(6.dp).fillMaxHeight().background(BeigePrimary))
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(text = task.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = BeigeSecondary)
-                    Text(text = task.description, style = MaterialTheme.typography.bodyLarge, color = Color.DarkGray)
+            Box(modifier = Modifier.width(6.dp).fillMaxHeight().background(MaterialTheme.colorScheme.primary))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp), 
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = task.title, 
+                        style = MaterialTheme.typography.titleLarge, 
+                        fontWeight = FontWeight.Bold, 
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = task.description, 
+                        style = MaterialTheme.typography.bodyMedium, 
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Schedule, contentDescription = "Due date", modifier = Modifier.size(16.dp), tint = Color.Gray)
+                        Icon(
+                            Icons.Default.Schedule, 
+                            contentDescription = "Due date", 
+                            modifier = Modifier.size(16.dp), 
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = SimpleDateFormat("EEE, MMM d, yyyy 'at' h:mm a", Locale.getDefault()).format(Date(task.dueDate)),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Gray
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete Task", tint = MaterialTheme.colorScheme.error)
+                    Icon(
+                        Icons.Default.Delete, 
+                        contentDescription = "Delete Task", 
+                        tint = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }
@@ -176,49 +201,96 @@ fun TaskDialog(
     var description by remember(task) { mutableStateOf(task?.description ?: "") }
 
     val initialDateTime = remember(task) { Calendar.getInstance().apply { if (task != null) timeInMillis = task.dueDate else timeInMillis = System.currentTimeMillis() } }
-    var pickedDate by remember { mutableStateOf(initialDateTime.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate()) }
-    var pickedTime by remember { mutableStateOf(initialDateTime.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalTime()) }
+    var pickedDate by remember { mutableStateOf(initialDateTime.toInstant().atZone(TimeZone.getDefault().toZoneId()).toLocalDate()) }
+    var pickedTime by remember { mutableStateOf(initialDateTime.toInstant().atZone(TimeZone.getDefault().toZoneId()).toLocalTime()) }
 
     val dateDialogState = rememberMaterialDialogState()
     val timeDialogState = rememberMaterialDialogState()
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        Card(
+            shape = RoundedCornerShape(16.dp), 
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
             Column(modifier = Modifier.padding(24.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text(text = if (task == null) "Add New Task" else "Edit Task", style = MaterialTheme.typography.headlineMedium, color = BeigeSecondary)
+                Text(
+                    text = if (task == null) "Add New Task" else "Edit Task", 
+                    style = MaterialTheme.typography.headlineSmall, 
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
 
-                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Task Title") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Task Description") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = title, 
+                    onValueChange = { title = it }, 
+                    label = { Text("Task Title") }, 
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = description, 
+                    onValueChange = { description = it }, 
+                    label = { Text("Task Description") }, 
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 val finalDateTime = remember(pickedDate, pickedTime) { Calendar.getInstance().apply { set(pickedDate.year, pickedDate.monthValue - 1, pickedDate.dayOfMonth, pickedTime.hour, pickedTime.minute) } }
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                    TextButton(onClick = { dateDialogState.show() }) { Text(SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(finalDateTime.time)) }
-                    TextButton(onClick = { timeDialogState.show() }) { Text(SimpleDateFormat("h:mm a", Locale.getDefault()).format(finalDateTime.time)) }
+                    TextButton(onClick = { dateDialogState.show() }) { 
+                        Text(
+                            text = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(finalDateTime.time),
+                            color = MaterialTheme.colorScheme.primary
+                        ) 
+                    }
+                    TextButton(onClick = { timeDialogState.show() }) { 
+                        Text(
+                            text = SimpleDateFormat("h:mm a", Locale.getDefault()).format(finalDateTime.time),
+                            color = MaterialTheme.colorScheme.primary
+                        ) 
+                    }
                 }
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    TextButton(onClick = onDismiss) { 
+                        Text("Cancel", color = MaterialTheme.colorScheme.secondary) 
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                        val taskToSave = task?.copy(
-                            title = title, description = description, dueDate = finalDateTime.timeInMillis
-                        ) ?: Task(title = title, description = description, dueDate = finalDateTime.timeInMillis)
-                        onSave(taskToSave)
-                    },
-                        colors = ButtonDefaults.buttonColors(containerColor = BeigePrimary)
-                    ) { Text("Save") }
+                            val taskToSave = task?.copy(
+                                title = title, 
+                                description = description, 
+                                dueDate = finalDateTime.timeInMillis
+                            ) ?: Task(
+                                title = title, 
+                                description = description, 
+                                dueDate = finalDateTime.timeInMillis,
+                                studentNumber = "" // Set in ViewModel
+                            )
+                            onSave(taskToSave)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) { 
+                        Text("Save") 
+                    }
                 }
             }
         }
     }
 
-    MaterialDialog(dialogState = dateDialogState, buttons = { positiveButton("Ok"); negativeButton("Cancel") }) {
+    MaterialDialog(
+        dialogState = dateDialogState, 
+        buttons = { positiveButton("Ok"); negativeButton("Cancel") },
+        backgroundColor = MaterialTheme.colorScheme.surface
+    ) {
         datepicker(initialDate = pickedDate, title = "Pick a date") { date -> pickedDate = date }
     }
 
-    MaterialDialog(dialogState = timeDialogState, buttons = { positiveButton("Ok"); negativeButton("Cancel") }) {
+    MaterialDialog(
+        dialogState = timeDialogState, 
+        buttons = { positiveButton("Ok"); negativeButton("Cancel") },
+        backgroundColor = MaterialTheme.colorScheme.surface
+    ) {
         timepicker(initialTime = pickedTime, title = "Pick a time") { time -> pickedTime = time }
     }
 }

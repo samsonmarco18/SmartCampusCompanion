@@ -10,8 +10,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Database(
-    entities = [Task::class, Department::class, Student::class, Grade::class, Announcement::class],
-    version = 10,
+    entities = [Task::class, Department::class, Student::class, Grade::class, Announcement::class, Comment::class],
+    version = 12,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -19,6 +19,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun departmentDao(): DepartmentDao
     abstract fun announcementDao(): AnnouncementDao
+    abstract fun commentDao(): CommentDao
 
     companion object {
         @Volatile

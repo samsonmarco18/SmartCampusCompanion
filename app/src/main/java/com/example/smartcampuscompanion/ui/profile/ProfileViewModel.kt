@@ -35,6 +35,16 @@ class ProfileViewModel(private val campusRepository: CampusRepository, private v
         }
     }
 
+    fun updateUserProfileImage(imageUrl: String) {
+        viewModelScope.launch {
+            val username = sessionManager.fetchUsername() ?: return@launch
+            val student = campusRepository.getStudentByName(username) ?: return@launch
+            val updatedStudent = student.copy(profileImageUrl = imageUrl)
+            campusRepository.addStudent(updatedStudent)
+            _uiState.value = ProfileState.Success(updatedStudent)
+        }
+    }
+
     fun updateUser(username: String, newUsername: String, newPassword: String) {
         viewModelScope.launch {
             val student = campusRepository.getStudentByName(username)

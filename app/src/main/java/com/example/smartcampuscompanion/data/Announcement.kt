@@ -13,6 +13,7 @@ data class Announcement(
     val departmentName: String? = null,
     val dueDate: Long,
     val studentNumber: String? = null,
+    val imageUrl: String? = null, // Path or URI to the image
     val isRead: Boolean = false,
     val timestamp: Long = System.currentTimeMillis()
 )

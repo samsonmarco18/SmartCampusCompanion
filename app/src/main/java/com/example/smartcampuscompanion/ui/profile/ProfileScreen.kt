@@ -1,7 +1,11 @@
 package com.example.smartcampuscompanion.ui.profile
 
 import android.app.Application
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,13 +19,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.smartcampuscompanion.data.Student
 import com.example.smartcampuscompanion.ui.theme.BeigeBackground
 import com.example.smartcampuscompanion.ui.theme.BeigePrimary
@@ -59,7 +66,11 @@ fun ProfileScreen(onNavigateUp: () -> Unit = {}) {
                     }
                 }
                 is ProfileState.Success -> {
-                    ProfileContent(student = state.student, onUpdate = profileViewModel::updateUser)
+                    ProfileContent(
+                        student = state.student,
+                        onUpdate = profileViewModel::updateUser,
+                        onUpdateImage = profileViewModel::updateUserProfileImage
+                    )
                 }
                 is ProfileState.Error -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -72,10 +83,18 @@ fun ProfileScreen(onNavigateUp: () -> Unit = {}) {
 }
 
 @Composable
-fun ProfileContent(student: Student, onUpdate: (String, String, String) -> Unit) {
+fun ProfileContent(
+    student: Student,
+    onUpdate: (String, String, String) -> Unit,
+    onUpdateImage: (String) -> Unit
+) {
     var isEditing by remember { mutableStateOf(false) }
     var newUsername by remember { mutableStateOf(student.name) }
     var newPassword by remember { mutableStateOf("") }
+
+    val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { onUpdateImage(it.toString()) }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -93,7 +112,10 @@ fun ProfileContent(student: Student, onUpdate: (String, String, String) -> Unit)
                     onCancel = { isEditing = false }
                 )
             } else {
-                UserProfileView(student = student)
+                UserProfileView(
+                    student = student,
+                    onImageClick = { launcher.launch("image/*") }
+                )
             }
         }
 
@@ -113,20 +135,44 @@ fun ProfileContent(student: Student, onUpdate: (String, String, String) -> Unit)
 }
 
 @Composable
-fun UserProfileView(student: Student) {
+fun UserProfileView(student: Student, onImageClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         Surface(
-            modifier = Modifier.size(120.dp),
+            modifier = Modifier
+                .size(120.dp)
+                .clickable { onImageClick() },
             shape = CircleShape,
             color = Color.White,
-            shadowElevation = 2.dp
+            shadowElevation = 4.dp
         ) {
-            Icon(
-                Icons.Default.AccountCircle,
-                contentDescription = "User Avatar",
-                modifier = Modifier.size(120.dp),
-                tint = BeigePrimary.copy(alpha = 0.6f)
-            )
+            if (student.profileImageUrl != null) {
+                AsyncImage(
+                    model = student.profileImageUrl,
+                    contentDescription = "Profile Picture",
+                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Icon(
+                    Icons.Default.AccountCircle,
+                    contentDescription = "User Avatar",
+                    modifier = Modifier.fillMaxSize(),
+                    tint = BeigePrimary.copy(alpha = 0.6f)
+                )
+            }
+            
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                Surface(
+                    color = BeigePrimary,
+                    shape = CircleShape,
+                    modifier = Modifier.size(32.dp).padding(4.dp)
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = null, tint = Color.White, modifier = Modifier.padding(4.dp))
+                }
+            }
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(

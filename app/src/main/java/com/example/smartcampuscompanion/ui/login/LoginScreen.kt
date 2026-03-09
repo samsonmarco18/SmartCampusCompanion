@@ -23,7 +23,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.smartcampuscompanion.ui.theme.BeigeBackground
 import com.example.smartcampuscompanion.ui.theme.BeigePrimary
 import com.example.smartcampuscompanion.ui.theme.BeigeSecondary
 import com.example.smartcampuscompanion.util.ViewModelFactory
@@ -46,7 +45,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignUp: () -> Unit) {
     }
 
     Scaffold(
-        containerColor = BeigeBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) {
         paddingValues ->
         Column(
@@ -68,14 +67,14 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignUp: () -> Unit) {
                 text = "Smart Campus Companion",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = BeigeSecondary
+                color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(32.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(
@@ -104,7 +103,9 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignUp: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BeigePrimary,
-                            focusedLabelColor = BeigePrimary
+                            focusedLabelColor = BeigePrimary,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -145,7 +146,9 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignUp: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BeigePrimary,
-                            focusedLabelColor = BeigePrimary
+                            focusedLabelColor = BeigePrimary,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
 
@@ -191,7 +194,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignUp: () -> Unit) {
             TextButton(onClick = onNavigateToSignUp) {
                 Text(
                     "Don't have an account? Sign up",
-                    color = BeigeSecondary,
+                    color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.Medium
                 )
             }

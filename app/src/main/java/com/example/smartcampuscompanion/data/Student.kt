@@ -15,7 +15,10 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["departmentName"])]
+    indices = [
+        Index(value = ["departmentName"]),
+        Index(value = ["studentNumber"], unique = true)
+    ]
 )
 data class Student(
     @PrimaryKey(autoGenerate = true)
@@ -26,5 +29,6 @@ data class Student(
     val email: String,
     val yearLevel: String,
     val departmentName: String,
-    val status: String = "Regular"
+    val status: String = "Regular",
+    val profileImageUrl: String? = null
 )
