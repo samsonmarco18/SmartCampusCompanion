@@ -1,26 +1,30 @@
 package com.example.smartcampuscompanion.ui.dashboard
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Announcement
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
@@ -41,8 +45,11 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -50,13 +57,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartcampuscompanion.ui.announcements.AnnouncementsViewModel
 import com.example.smartcampuscompanion.ui.campus_info.CampusViewModel
 import com.example.smartcampuscompanion.ui.navigation.Screen
+import com.example.smartcampuscompanion.ui.theme.BeigeBackground
+import com.example.smartcampuscompanion.ui.theme.BeigePrimary
+import com.example.smartcampuscompanion.ui.theme.BeigeSecondary
 import kotlinx.coroutines.launch
 
 data class DashboardItem(
@@ -179,72 +191,79 @@ fun DashboardScreen(
     ) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = { Text("Dashboard") },
-                    navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = onLogout) {
-                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
-                        }
-                    }
-                )
-            }
-        ) { paddingValues ->
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = paddingValues.calculateTopPadding() + 16.dp,
-                    bottom = 16.dp
-                ),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                item(span = { GridItemSpan(2) }) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                Column {
+                    TopAppBar(
+                        title = { Text("Dashboard", color = Color.White) },
+                        navigationIcon = {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = onLogout) {
+                                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout", tint = Color.White)
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = BeigePrimary
+                        )
+                    )
+                    // Dual-color header style from Student Record
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(BeigeSecondary)
+                            .padding(vertical = 12.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Welcome to your Smart Campus Companion!",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 24.dp)
+                            text = "Departments: $totalDepartments",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
                         )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            StatisticCard(
-                                title = "Total Departments",
-                                value = totalDepartments.toString(),
-                                modifier = Modifier.weight(1f)
-                            )
-                            StatisticCard(
-                                title = "Total Students",
-                                value = totalStudents.toString(),
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.width(24.dp))
+                        VerticalDivider(
+                            color = Color.White.copy(alpha = 0.5f),
+                            modifier = Modifier.height(16.dp),
+                            thickness = 1.dp
+                        )
+                        Spacer(modifier = Modifier.width(24.dp))
                         Text(
-                            "Services",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.align(Alignment.Start)
+                            text = "Total Students: $totalStudents",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
                     }
+                }
+            },
+            containerColor = BeigeBackground
+        ) { paddingValues ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    Text(
+                        "Welcome to Smart Campus!",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = BeigeSecondary,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+                
+                item {
+                    SectionHeader("Available Services")
                 }
 
                 items(items) { item ->
-                    DashboardCard(item)
+                    DashboardServiceCard(item)
                 }
             }
         }
@@ -252,23 +271,31 @@ fun DashboardScreen(
 }
 
 @Composable
-fun StatisticCard(title: String, value: String, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+fun SectionHeader(name: String) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        color = BeigePrimary.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(4.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(title, style = MaterialTheme.typography.titleSmall)
-            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(4.dp, 16.dp)
+                    .background(BeigePrimary, RoundedCornerShape(2.dp))
+            )
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
-                value,
-                style = MaterialTheme.typography.headlineMedium,
+                text = name,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = BeigePrimary,
+                letterSpacing = 0.5.sp
             )
         }
     }
@@ -276,40 +303,73 @@ fun StatisticCard(title: String, value: String, modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardCard(item: DashboardItem) {
+fun DashboardServiceCard(item: DashboardItem) {
     Card(
         modifier = Modifier
-            .aspectRatio(1f)
+            .fillMaxWidth()
             .clickable { item.onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            BadgedBox(
-                badge = {
-                    if (item.badgeCount > 0) {
-                        Badge {
-                            Text(item.badgeCount.toString())
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(40.dp),
+                    shape = CircleShape,
+                    color = BeigeBackground
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        BadgedBox(
+                            badge = {
+                                if (item.badgeCount > 0) {
+                                    Badge {
+                                        Text(item.badgeCount.toString())
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = BeigePrimary
+                            )
                         }
                     }
                 }
-            ) {
-                Icon(
-                    imageVector = item.icon,
-                    contentDescription = item.title,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = item.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.DarkGray
                 )
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = item.title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(48.dp)
+                    .background(BeigePrimary),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = Color.White
+                )
+            }
         }
     }
 }
