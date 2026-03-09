@@ -66,9 +66,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartcampuscompanion.ui.announcements.AnnouncementsViewModel
 import com.example.smartcampuscompanion.ui.campus_info.CampusViewModel
 import com.example.smartcampuscompanion.ui.navigation.Screen
-import com.example.smartcampuscompanion.ui.theme.BeigeBackground
-import com.example.smartcampuscompanion.ui.theme.BeigePrimary
-import com.example.smartcampuscompanion.ui.theme.BeigeSecondary
 import kotlinx.coroutines.launch
 
 data class DashboardItem(
@@ -193,53 +190,52 @@ fun DashboardScreen(
             topBar = {
                 Column {
                     TopAppBar(
-                        title = { Text("Dashboard", color = Color.White) },
+                        title = { Text("Dashboard", color = MaterialTheme.colorScheme.onPrimary) },
                         navigationIcon = {
                             IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
+                                Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.onPrimary)
                             }
                         },
                         actions = {
                             IconButton(onClick = onLogout) {
-                                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout", tint = Color.White)
+                                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout", tint = MaterialTheme.colorScheme.onPrimary)
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = BeigePrimary
+                            containerColor = MaterialTheme.colorScheme.primary
                         )
                     )
-                    // Dual-color header style from Student Record
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(BeigeSecondary)
+                            .background(MaterialTheme.colorScheme.secondary)
                             .padding(vertical = 12.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = "Departments: $totalDepartments",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSecondary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
                         Spacer(modifier = Modifier.width(24.dp))
                         VerticalDivider(
-                            color = Color.White.copy(alpha = 0.5f),
+                            color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.5f),
                             modifier = Modifier.height(16.dp),
                             thickness = 1.dp
                         )
                         Spacer(modifier = Modifier.width(24.dp))
                         Text(
                             text = "Total Students: $totalStudents",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSecondary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
                 }
             },
-            containerColor = BeigeBackground
+            containerColor = MaterialTheme.colorScheme.background
         ) { paddingValues ->
             LazyColumn(
                 modifier = Modifier
@@ -253,7 +249,7 @@ fun DashboardScreen(
                         "Welcome to Smart Campus!",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = BeigeSecondary,
+                        color = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
@@ -276,7 +272,7 @@ fun SectionHeader(name: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        color = BeigePrimary.copy(alpha = 0.1f),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
         shape = RoundedCornerShape(4.dp)
     ) {
         Row(
@@ -287,14 +283,14 @@ fun SectionHeader(name: String) {
             Box(
                 modifier = Modifier
                     .size(4.dp, 16.dp)
-                    .background(BeigePrimary, RoundedCornerShape(2.dp))
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp))
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = name,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = BeigePrimary,
+                color = MaterialTheme.colorScheme.primary,
                 letterSpacing = 0.5.sp
             )
         }
@@ -310,7 +306,7 @@ fun DashboardServiceCard(item: DashboardItem) {
             .clickable { item.onClick() },
         shape = RoundedCornerShape(4.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -327,7 +323,7 @@ fun DashboardServiceCard(item: DashboardItem) {
                 Surface(
                     modifier = Modifier.size(40.dp),
                     shape = CircleShape,
-                    color = BeigeBackground
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         BadgedBox(
@@ -343,7 +339,7 @@ fun DashboardServiceCard(item: DashboardItem) {
                                 imageVector = item.icon,
                                 contentDescription = null,
                                 modifier = Modifier.size(24.dp),
-                                tint = BeigePrimary
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -353,7 +349,7 @@ fun DashboardServiceCard(item: DashboardItem) {
                     text = item.title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color.DarkGray
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -361,13 +357,13 @@ fun DashboardServiceCard(item: DashboardItem) {
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(48.dp)
-                    .background(BeigePrimary),
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = null,
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }

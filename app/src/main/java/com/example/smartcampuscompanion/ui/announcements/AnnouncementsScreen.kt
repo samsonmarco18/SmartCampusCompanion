@@ -38,14 +38,18 @@ fun AnnouncementsScreen(
         topBar = {
             @OptIn(ExperimentalMaterial3Api::class)
             TopAppBar(
-                title = { Text("Announcements") },
+                title = { Text("Announcements", color = MaterialTheme.colorScheme.onPrimary) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         if (announcements.isEmpty()) {
             Box(
@@ -59,13 +63,13 @@ fun AnnouncementsScreen(
                         Icons.Default.Notifications,
                         contentDescription = null,
                         modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.outline
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         "No announcements yet",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.outline
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
             }
@@ -94,14 +98,14 @@ fun AnnouncementItem(
     onClick: () -> Unit
 ) {
     val backgroundColor = if (announcement.isRead) {
-        Color(0xFFF5F5F5) // Grey for unread
+        MaterialTheme.colorScheme.surface
     } else {
         when (announcement.category) {
-            "Event" -> Color(0xFFE8F5E9) // Light Green
+            "Event" -> Color(0xFFE8F5E9) // Light Green (keeping for contrast, but could use surface)
             "Activity" -> Color(0xFFFFFDE7) // Light Yellow
             "Urgent" -> Color(0xFFFFEBEE) // Light Red
             "Seminar" -> Color(0xFFE1F5FE) // Light Blue
-            else -> MaterialTheme.colorScheme.surfaceVariant
+            else -> MaterialTheme.colorScheme.surface
         }
     }
 
@@ -113,7 +117,7 @@ fun AnnouncementItem(
             "Activity" -> Color(0xFFFBC02D) // Dark Yellow
             "Urgent" -> Color(0xFFC62828) // Dark Red
             "Seminar" -> Color(0xFF0277BD) // Dark Blue
-            else -> MaterialTheme.colorScheme.onSurfaceVariant
+            else -> MaterialTheme.colorScheme.secondary
         }
     }
 
@@ -121,10 +125,11 @@ fun AnnouncementItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(
             containerColor = backgroundColor
-        )
+        ),
+        shape = RoundedCornerShape(4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -144,7 +149,7 @@ fun AnnouncementItem(
             Text(
                 text = announcement.content,
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (!announcement.isRead) Color.Black else MaterialTheme.colorScheme.onSurface
+                color = if (!announcement.isRead) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -155,7 +160,7 @@ fun AnnouncementItem(
                 Text(
                     text = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(announcement.timestamp)),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(announcement.timestamp)),

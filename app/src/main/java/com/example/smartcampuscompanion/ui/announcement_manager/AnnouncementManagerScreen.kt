@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -46,22 +47,30 @@ fun AnnouncementManagerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Announcement Manager") },
+                title = { Text("Announcement Manager", color = MaterialTheme.colorScheme.onPrimary) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {
-                announcementToEdit = null
-                showDialog = true
-            }) {
+            FloatingActionButton(
+                onClick = {
+                    announcementToEdit = null
+                    showDialog = true
+                },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Announcement")
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             if (announcements.isEmpty()) {
@@ -70,7 +79,7 @@ fun AnnouncementManagerScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(announcements, key = { it.id }) { announcement ->
                         AnnouncementItem(
@@ -104,16 +113,18 @@ private fun EmptyState() {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Icon(Icons.Default.Announcement, contentDescription = null, modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.primary)
+            Icon(Icons.Default.Announcement, contentDescription = null, modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
             Text(
                 text = "No Announcements Yet",
                 style = MaterialTheme.typography.headlineSmall,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.secondary
             )
             Text(
                 text = "Tap the '+' button to add a new announcement.",
                 style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -123,29 +134,32 @@ private fun EmptyState() {
 fun AnnouncementItem(announcement: Announcement, onDelete: () -> Unit, onEdit: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onEdit),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        shape = RoundedCornerShape(4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Row {
-            Box(modifier = Modifier.width(6.dp).fillMaxHeight().background(MaterialTheme.colorScheme.primary)) {}
+        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+            Box(modifier = Modifier.width(6.dp).fillMaxHeight().background(MaterialTheme.colorScheme.primary))
             Row(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(text = announcement.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    ChipView(text = announcement.category)
-                    if (announcement.departmentName != null) {
-                        ChipView(text = announcement.departmentName)
+                    Text(text = announcement.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ChipView(text = announcement.category)
+                        if (announcement.departmentName != null) {
+                            ChipView(text = announcement.departmentName)
+                        }
                     }
-                    Text(text = announcement.content, style = MaterialTheme.typography.bodyLarge)
+                    Text(text = announcement.content, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Schedule, contentDescription = "Due date", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = SimpleDateFormat("EEE, MMM d, yyyy 'at' h:mm a", Locale.getDefault()).format(Date(announcement.dueDate)),
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -192,12 +206,30 @@ fun AnnouncementDialog(
     val timeDialogState = rememberMaterialDialogState()
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(shape = RoundedCornerShape(16.dp)) {
+        Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Column(modifier = Modifier.padding(24.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text(text = if (announcement == null) "Add New Announcement" else "Edit Announcement", style = MaterialTheme.typography.headlineMedium)
+                Text(text = if (announcement == null) "Add New Announcement" else "Edit Announcement", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.secondary)
 
-                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Announcement Title") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = content, onValueChange = { content = it }, label = { Text("Announcement Content") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = title, 
+                    onValueChange = { title = it }, 
+                    label = { Text("Announcement Title") }, 
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+                OutlinedTextField(
+                    value = content, 
+                    onValueChange = { content = it }, 
+                    label = { Text("Announcement Content") }, 
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary
+                    )
+                )
 
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedButton(onClick = { expandedDepartment = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
@@ -235,14 +267,17 @@ fun AnnouncementDialog(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text("Cancel") }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
+                    Button(
+                        onClick = {
                         if (selectedCategory != null) {
                             val announcementToSave = announcement?.copy(
                                 title = title, content = content, dueDate = finalDateTime.timeInMillis, departmentName = selectedDepartment, category = selectedCategory!!
                             ) ?: Announcement(title = title, content = content, dueDate = finalDateTime.timeInMillis, departmentName = selectedDepartment, category = selectedCategory!!)
                             onSave(announcementToSave)
                         }
-                    }) { Text("Save") }
+                    },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) { Text("Save") }
                 }
             }
         }

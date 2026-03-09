@@ -1,8 +1,12 @@
 package com.example.smartcampuscompanion.ui.profile
 
 import android.app.Application
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
@@ -11,33 +15,57 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartcampuscompanion.data.Student
+import com.example.smartcampuscompanion.ui.theme.BeigeBackground
+import com.example.smartcampuscompanion.ui.theme.BeigePrimary
+import com.example.smartcampuscompanion.ui.theme.BeigeSecondary
 import com.example.smartcampuscompanion.util.ViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(onNavigateUp: () -> Unit = {}) {
     val context = LocalContext.current
     val profileViewModel: ProfileViewModel = viewModel(factory = ViewModelFactory(context.applicationContext as Application))
     val uiState by profileViewModel.uiState.collectAsState()
 
-    when (val state = uiState) {
-        is ProfileState.Loading -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        }
-        is ProfileState.Success -> {
-            ProfileContent(student = state.student, onUpdate = profileViewModel::updateUser)
-        }
-        is ProfileState.Error -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(text = state.message)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Profile", color = Color.White) },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateUp) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = BeigePrimary
+                )
+            )
+        },
+        containerColor = BeigeBackground
+    ) { paddingValues ->
+        Box(modifier = Modifier.padding(paddingValues)) {
+            when (val state = uiState) {
+                is ProfileState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = BeigePrimary)
+                    }
+                }
+                is ProfileState.Success -> {
+                    ProfileContent(student = state.student, onUpdate = profileViewModel::updateUser)
+                }
+                is ProfileState.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = state.message, color = Color.Red)
+                    }
+                }
             }
         }
     }
@@ -49,19 +77,10 @@ fun ProfileContent(student: Student, onUpdate: (String, String, String) -> Unit)
     var newUsername by remember { mutableStateOf(student.name) }
     var newPassword by remember { mutableStateOf("") }
 
-    Scaffold(
-        floatingActionButton = {
-            if (!isEditing) {
-                FloatingActionButton(onClick = { isEditing = true }) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit Profile")
-                }
-            }
-        }
-    ) { paddingValues ->
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp)
         ) {
             if (isEditing) {
@@ -77,19 +96,88 @@ fun ProfileContent(student: Student, onUpdate: (String, String, String) -> Unit)
                 UserProfileView(student = student)
             }
         }
+
+        if (!isEditing) {
+            FloatingActionButton(
+                onClick = { isEditing = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                containerColor = BeigePrimary,
+                contentColor = Color.White
+            ) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit Profile")
+            }
+        }
     }
 }
 
 @Composable
 fun UserProfileView(student: Student) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-        Icon(Icons.Default.AccountCircle, contentDescription = "User Avatar", modifier = Modifier.size(128.dp))
+        Surface(
+            modifier = Modifier.size(120.dp),
+            shape = CircleShape,
+            color = Color.White,
+            shadowElevation = 2.dp
+        ) {
+            Icon(
+                Icons.Default.AccountCircle,
+                contentDescription = "User Avatar",
+                modifier = Modifier.size(120.dp),
+                tint = BeigePrimary.copy(alpha = 0.6f)
+            )
+        }
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = student.name, style = MaterialTheme.typography.headlineMedium)
+        Text(
+            text = student.name,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = BeigeSecondary
+        )
+        Text(
+            text = "Student Account",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray
+        )
+        
         Spacer(modifier = Modifier.height(32.dp))
+        
+        SectionHeader("Personal Information")
         ProfileInfoRow(icon = Icons.Default.Person, label = "Username", value = student.name)
         ProfileInfoRow(icon = Icons.Default.School, label = "Department", value = student.departmentName)
         ProfileInfoRow(icon = Icons.Default.School, label = "Year Level", value = student.yearLevel)
+    }
+}
+
+@Composable
+fun SectionHeader(name: String) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        color = BeigePrimary.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(4.dp, 16.dp)
+                    .background(BeigePrimary, RoundedCornerShape(2.dp))
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = BeigePrimary,
+                letterSpacing = 0.5.sp
+            )
+        }
     }
 }
 
@@ -102,33 +190,54 @@ fun EditProfileView(
     onSave: () -> Unit,
     onCancel: () -> Unit
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-        Text("Edit Profile", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(32.dp))
-        OutlinedTextField(value = username, onValueChange = onUsernameChange, label = { Text("Username") }, modifier = Modifier.fillMaxWidth())
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(value = password, onValueChange = onPasswordChange, label = { Text("New Password") }, modifier = Modifier.fillMaxWidth())
-        Spacer(modifier = Modifier.height(32.dp))
-        Row {
-            Button(onClick = onSave) {
-                Text("Save")
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            OutlinedButton(onClick = onCancel) {
-                Text("Cancel")
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Edit Profile", style = MaterialTheme.typography.headlineSmall, color = BeigeSecondary, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(24.dp))
+            OutlinedTextField(
+                value = username,
+                onValueChange = onUsernameChange,
+                label = { Text("Username") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = password,
+                onValueChange = onPasswordChange,
+                label = { Text("New Password") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                OutlinedButton(onClick = onCancel) {
+                    Text("Cancel")
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Button(
+                    onClick = onSave,
+                    colors = ButtonDefaults.buttonColors(containerColor = BeigePrimary)
+                ) {
+                    Text("Save")
+                }
             }
         }
     }
 }
-
 
 @Composable
 fun ProfileInfoRow(icon: ImageVector, label: String, value: String) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .padding(vertical = 4.dp),
+        shape = RoundedCornerShape(4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
             modifier = Modifier
@@ -136,11 +245,19 @@ fun ProfileInfoRow(icon: ImageVector, label: String, value: String) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = CircleShape,
+                color = BeigeBackground
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = BeigePrimary)
+                }
+            }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(text = label, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                Text(text = value, style = MaterialTheme.typography.bodyLarge)
+                Text(text = label, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                Text(text = value, style = MaterialTheme.typography.titleMedium, color = Color.DarkGray, fontWeight = FontWeight.Bold)
             }
         }
     }
