@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -82,6 +84,7 @@ fun ProfileScreen(onNavigateUp: () -> Unit = {}) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileContent(
     student: Student,
@@ -108,7 +111,10 @@ fun ProfileContent(
                     onUsernameChange = { newUsername = it },
                     password = newPassword,
                     onPasswordChange = { newPassword = it },
-                    onSave = { onUpdate(student.name, newUsername, newPassword); isEditing = false },
+                    onSave = {
+                        onUpdate(student.name, newUsername, newPassword)
+                        isEditing = false
+                    },
                     onCancel = { isEditing = false }
                 )
             } else {
@@ -196,6 +202,7 @@ fun UserProfileView(student: Student, onImageClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SectionHeader(name: String) {
     Surface(
@@ -277,7 +284,7 @@ fun EditProfileView(
 
 @Composable
 fun ProfileInfoRow(icon: ImageVector, label: String, value: String) {
-    Card(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
