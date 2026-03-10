@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -53,14 +54,18 @@ fun CampusInfoScreen(viewModel: CampusViewModel = viewModel(), onNavigateUp: () 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Campus Information") },
+                title = { Text("Campus Information", color = MaterialTheme.colorScheme.onPrimary) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -80,6 +85,7 @@ fun CampusInfoScreen(viewModel: CampusViewModel = viewModel(), onNavigateUp: () 
                     text = "Our Departments",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
@@ -103,7 +109,7 @@ fun AboutSection() {
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
                 .background(
-                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                     shape = MaterialTheme.shapes.large
                 )
                 .clip(MaterialTheme.shapes.large),
@@ -113,7 +119,7 @@ fun AboutSection() {
                 imageVector = Icons.Filled.School,
                 contentDescription = "Campus",
                 modifier = Modifier.size(100.dp),
-                tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
@@ -121,11 +127,13 @@ fun AboutSection() {
             text = "About Our Campus",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.secondary
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Welcome to Smart Campus, a place of learning, innovation, and community. Since our establishment, we have been committed to providing top-quality education and fostering a vibrant campus life.",
             style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground
         )
     }
 }
@@ -178,10 +186,15 @@ fun MissionVisionItem(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.secondary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = text, style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = text, 
+                    style = MaterialTheme.typography.bodyLarge, 
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
     }
@@ -197,7 +210,7 @@ fun DepartmentCard(
         modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
     ) {
         Row(
             modifier = Modifier

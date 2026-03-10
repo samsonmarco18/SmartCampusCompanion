@@ -35,9 +35,6 @@ fun StudentRecordScreen(onBackClick: () -> Unit = {}) {
     val studentRecordViewModel: StudentRecordViewModel = viewModel(factory = ViewModelFactory(context.applicationContext as Application))
     val departmentsWithStudents by studentRecordViewModel.departmentsWithStudents.collectAsState()
 
-    val primaryBlue = Color(0xFF004D84)
-    val secondaryBlue = Color(0xFF003D69)
-
     Scaffold(
         topBar = {
             Column {
@@ -45,59 +42,59 @@ fun StudentRecordScreen(onBackClick: () -> Unit = {}) {
                     title = {
                         Text(
                             "Student Records",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             style = MaterialTheme.typography.titleLarge
                         )
                     },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
                         }
                     },
                     actions = {
                         IconButton(onClick = { /* TODO */ }) {
-                            Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
+                            Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.onPrimary)
                         }
                         IconButton(onClick = { /* TODO */ }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.White)
+                            Icon(Icons.Default.MoreVert, contentDescription = "More", tint = MaterialTheme.colorScheme.onPrimary)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = primaryBlue
+                        containerColor = MaterialTheme.colorScheme.primary
                     )
                 )
-                // Filter bar style from the image
+                // Filter bar style
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(secondaryBlue)
+                        .background(MaterialTheme.colorScheme.secondary)
                         .padding(vertical = 12.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = "Department Summary",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSecondary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.width(24.dp))
                     VerticalDivider(
-                        color = Color.White.copy(alpha = 0.5f),
+                        color = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.5f),
                         modifier = Modifier.height(16.dp),
                         thickness = 1.dp
                     )
                     Spacer(modifier = Modifier.width(24.dp))
                     Text(
                         text = "Total: ${departmentsWithStudents.sumOf { it.students.size }}",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSecondary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
                 }
             }
         },
-        containerColor = Color(0xFFF2F2F2)
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         if (departmentsWithStudents.isEmpty()) {
             Box(
@@ -128,6 +125,26 @@ fun StudentRecordScreen(onBackClick: () -> Unit = {}) {
                     }
                 }
             }
+
+            // Status indicator section (Green for Regular, Red otherwise)
+            val isRegular = student.status.equals("Regular", ignoreCase = true)
+            val statusColor = if (isRegular) Color(0xFF00897B) else Color(0xFFD32F2F)
+            val statusLabel = if (isRegular) "R" else "I"
+
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(60.dp)
+                    .background(statusColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = statusLabel,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            }
         }
     }
 }
@@ -138,7 +155,7 @@ fun DepartmentHeader(name: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        color = Color(0xFF004D84).copy(alpha = 0.1f),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
         shape = RoundedCornerShape(4.dp)
     ) {
         Row(
@@ -149,14 +166,14 @@ fun DepartmentHeader(name: String) {
             Box(
                 modifier = Modifier
                     .size(4.dp, 16.dp)
-                    .background(Color(0xFF004D84), RoundedCornerShape(2.dp))
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp))
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = name,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF004D84),
+                color = MaterialTheme.colorScheme.primary,
                 letterSpacing = 0.5.sp
             )
         }
@@ -171,7 +188,7 @@ fun StudentRecordCard(student: Student) {
             .padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(4.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -188,13 +205,13 @@ fun StudentRecordCard(student: Student) {
                 Surface(
                     modifier = Modifier.size(48.dp),
                     shape = CircleShape,
-                    color = Color(0xFFEEEEEE)
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = null,
                         modifier = Modifier.padding(8.dp),
-                        tint = Color.Gray
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
@@ -203,19 +220,19 @@ fun StudentRecordCard(student: Student) {
                         text = student.name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.DarkGray
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Row {
                         Text(
                             text = "ID: ${student.studentNumber}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "• ${student.yearLevel}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
