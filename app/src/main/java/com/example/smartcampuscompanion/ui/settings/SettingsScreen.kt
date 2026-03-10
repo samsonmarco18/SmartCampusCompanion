@@ -1,9 +1,14 @@
 package com.example.smartcampuscompanion.ui.settings
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,7 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -28,10 +36,17 @@ fun SettingsScreen(
     isDarkMode: Boolean,
     onToggleDarkMode: (Boolean) -> Unit,
     onNavigateUp: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToProfile: () -> Unit
 ) {
+    val context = LocalContext.current
     var notificationsEnabled by remember { mutableStateOf(true) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
+    
+    val languages = listOf("English (US)", "Filipino", "Spanish", "French", "Japanese")
+    var selectedLanguage by remember { mutableStateOf(languages[0]) }
 
     Scaffold(
         topBar = {
@@ -46,7 +61,9 @@ fun SettingsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO: Search settings */ }) {
+                    IconButton(onClick = { 
+                        Toast.makeText(context, "Search coming soon!", Toast.LENGTH_SHORT).show()
+                    }) {
                         Icon(Icons.Default.Search, contentDescription = "Search Settings")
                     }
                 },
@@ -65,7 +82,7 @@ fun SettingsScreen(
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             item {
-                UserProfileCard()
+                UserProfileCard(onClick = onNavigateToProfile)
             }
 
             item {
@@ -86,9 +103,9 @@ fun SettingsScreen(
                     )
                     SettingsClickableItem(
                         title = "Language",
-                        subtitle = "English (US)",
+                        subtitle = selectedLanguage,
                         icon = Icons.Default.Language,
-                        onClick = { /* Navigate to language settings */ }
+                        onClick = { showLanguageDialog = true }
                     )
                 }
             }
@@ -99,19 +116,23 @@ fun SettingsScreen(
                         title = "Edit Profile",
                         subtitle = "Personal info and photo",
                         icon = Icons.Default.Person,
-                        onClick = { /* Navigate to edit profile */ }
+                        onClick = onNavigateToProfile
                     )
                     SettingsClickableItem(
                         title = "Security",
                         subtitle = "Password and biometric lock",
                         icon = Icons.Default.Lock,
-                        onClick = { /* Navigate to privacy */ }
+                        onClick = { 
+                            Toast.makeText(context, "Security settings coming soon!", Toast.LENGTH_SHORT).show()
+                        }
                     )
                     SettingsClickableItem(
                         title = "Storage",
                         subtitle = "Manage offline data",
                         icon = Icons.Default.Storage,
-                        onClick = { /* Navigate to storage */ }
+                        onClick = { 
+                            Toast.makeText(context, "Storage management coming soon!", Toast.LENGTH_SHORT).show()
+                        }
                     )
                 }
             }
@@ -122,19 +143,32 @@ fun SettingsScreen(
                         title = "Help Center",
                         subtitle = "FAQs and support contact",
                         icon = Icons.AutoMirrored.Filled.HelpOutline,
-                        onClick = { /* Navigate to help */ }
+                        onClick = { 
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://google.com"))
+                            context.startActivity(intent)
+                        }
                     )
                     SettingsClickableItem(
                         title = "Feedback",
                         subtitle = "Help us improve the app",
                         icon = Icons.Default.Feedback,
-                        onClick = { /* Navigate to feedback */ }
+                        onClick = { 
+                            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = Uri.parse("mailto:support@smartcampus.com")
+                                putExtra(Intent.EXTRA_SUBJECT, "App Feedback")
+                            }
+                            try {
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "No email app found", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     )
                     SettingsClickableItem(
                         title = "About",
                         subtitle = "v1.0.0 (Stable Build)",
                         icon = Icons.Default.Info,
-                        onClick = { /* Navigate to about */ }
+                        onClick = { showAboutDialog = true }
                     )
                 }
             }
@@ -193,15 +227,87 @@ fun SettingsScreen(
                 }
             )
         }
+
+        if (showLanguageDialog) {
+            AlertDialog(
+                onDismissRequest = { showLanguageDialog = false },
+                title = { Text("Select Language") },
+                text = {
+                    Column(Modifier.selectableGroup()) {
+                        languages.forEach { text ->
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp)
+                                    .selectable(
+                                        selected = (text == selectedLanguage),
+                                        onClick = { selectedLanguage = text },
+                                        role = Role.RadioButton
+                                    )
+                                    .padding(horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = (text == selectedLanguage),
+                                    onClick = null // null recommended for accessibility with screenreaders
+                                )
+                                Text(
+                                    text = text,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(start = 16.dp)
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showLanguageDialog = false }) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showLanguageDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        if (showAboutDialog) {
+            AlertDialog(
+                onDismissRequest = { showAboutDialog = false },
+                icon = { Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                title = { Text("Smart Campus Companion") },
+                text = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                        Text("Version 1.0.0", fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "A comprehensive solution for campus life, helping students stay organized and informed.",
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("© 2024 Campus Tech Team", style = MaterialTheme.typography.labelSmall)
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showAboutDialog = false }) {
+                        Text("Close")
+                    }
+                }
+            )
+        }
     }
 }
 
 @Composable
-fun UserProfileCard() {
+fun UserProfileCard(onClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(16.dp)
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp
@@ -238,7 +344,7 @@ fun UserProfileCard() {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            IconButton(onClick = { /* Edit profile */ }) {
+            IconButton(onClick = onClick) {
                 Icon(
                     Icons.Default.Edit,
                     contentDescription = "Edit Profile",
