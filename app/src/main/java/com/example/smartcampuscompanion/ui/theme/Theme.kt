@@ -11,45 +11,40 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-/* 🔹 Smart Campus Custom Colors (ADDED) */
-private val CampusPrimary = Color(0xFF1565C0)
-private val CampusSecondary = Color(0xFF42A5F5)
-private val CampusBackgroundLight = Color(0xFFF5F7FA)
-private val CampusBackgroundDark = Color(0xFF121212)
-
-/* 🌙 Dark Theme */
+/* 🌙 Dark Theme - Beige Based */
 private val DarkColorScheme = darkColorScheme(
-    primary = CampusPrimary,
-    secondary = CampusSecondary,
+    primary = BeigePrimaryDark,
+    secondary = BeigeSecondaryDark,
     tertiary = Pink80,
-    background = CampusBackgroundDark,
-    surface = CampusBackgroundDark,
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onSurface = Color.White
+    background = BeigeBackgroundDark,
+    surface = BeigeCardDark,
+    onPrimary = Color.Black,
+    onSecondary = Color.Black,
+    onBackground = Color.White,
+    onSurface = Color.White,
+    surfaceVariant = BeigeSurfaceDark,
+    onSurfaceVariant = Color.LightGray
 )
 
-/* ☀️ Light Theme */
+/* ☀️ Light Theme - Beige Based */
 private val LightColorScheme = lightColorScheme(
-    primary = CampusPrimary,
-    secondary = CampusSecondary,
+    primary = BeigePrimary,
+    secondary = BeigeSecondary,
     tertiary = Pink40,
-    background = CampusBackgroundLight,
+    background = BeigeBackground,
     surface = Color.White,
     onPrimary = Color.White,
     onSecondary = Color.White,
-    onSurface = Color.Black
-
-    /* Other default colors preserved
-    onBackground = Color(0xFF1C1B1F),
-    */
+    onBackground = Color.Black,
+    onSurface = Color.Black,
+    surfaceVariant = BeigeAccent.copy(alpha = 0.1f)
 )
 
 @Composable
 fun SmartCampusCompanionTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Set too false to force our Beige theme
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -65,7 +60,7 @@ fun SmartCampusCompanionTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = AppTypography,
         content = content
     )
 }

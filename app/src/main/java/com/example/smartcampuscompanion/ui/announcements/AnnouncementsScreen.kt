@@ -1,33 +1,51 @@
 package com.example.smartcampuscompanion.ui.announcements
 
+import android.app.Application
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.smartcampuscompanion.data.Announcement
+import com.example.smartcampuscompanion.data.Comment
+import com.example.smartcampuscompanion.util.SessionManager
+import com.example.smartcampuscompanion.util.ViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 fun AnnouncementsScreen(
     onNavigateUp: () -> Unit = {},
-    modifier: Modifier = Modifier,
-    viewModel: AnnouncementsViewModel = viewModel()
+    modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val viewModel: AnnouncementsViewModel = viewModel(factory = ViewModelFactory(context.applicationContext as Application))
     val announcements by viewModel.announcements.collectAsState()
+    val sessionManager = remember { SessionManager(context) }
+    val currentStudentNumber = sessionManager.fetchStudentNumber() ?: ""
 
     Scaffold(
         topBar = {
@@ -70,12 +88,13 @@ fun AnnouncementsScreen(
                     .fillMaxSize()
                     .padding(padding),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(announcements) { announcement ->
-                    AnnouncementItem(
+                items(announcements, key = { it.id }) { announcement ->
+                    AnnouncementCard(
                         announcement = announcement,
-                        onClick = { viewModel.markAsRead(announcement.id) }
+                        viewModel = viewModel,
+                        currentStudentNumber = currentStudentNumber
                     )
                 }
             }
@@ -84,41 +103,29 @@ fun AnnouncementsScreen(
 }
 
 @Composable
-fun AnnouncementItem(
+fun AnnouncementCard(
     announcement: Announcement,
-    onClick: () -> Unit
+    viewModel: AnnouncementsViewModel,
+    currentStudentNumber: String
 ) {
-    // If it's NOT read, we use grey. If it IS read, we use the type-specific colors.
-    val backgroundColor = if (announcement.isRead) {
-        Color(0xFFF5F5F5) // Grey for unread
-    } else {
-        when (announcement.type) {
-            "ADD" -> Color(0xFFE8F5E9) // Light Green
-            "UPDATE" -> Color(0xFFFFFDE7) // Light Yellow
-            "DELETE" -> Color(0xFFFFEBEE) // Light Red
-            else -> MaterialTheme.colorScheme.surfaceVariant
-        }
-    }
-
-    val contentColor = if (announcement.isRead) {
-        Color.Gray
-    } else {
-        when (announcement.type) {
-            "ADD" -> Color(0xFF2E7D32) // Dark Green
-            "UPDATE" -> Color(0xFFFBC02D) // Dark Yellow
-            "DELETE" -> Color(0xFFC62828) // Dark Red
-            else -> MaterialTheme.colorScheme.onSurfaceVariant
-        }
-    }
+    var isExpanded by remember { mutableStateOf(false) }
+    val comments by viewModel.getComments(announcement.id).collectAsState(initial = emptyList())
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            .clickable {
+                isExpanded = !isExpanded
+                if (!announcement.isRead) {
+                    viewModel.markAsRead(announcement.id)
+                }
+            }
+            .animateContentSize(),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isExpanded) 4.dp else 2.dp),
         colors = CardDefaults.cardColors(
-            containerColor = backgroundColor
-        )
+            containerColor = if (announcement.isRead) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        border = if (!announcement.isRead) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) else null
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -126,31 +133,284 @@ fun AnnouncementItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = announcement.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = if (!announcement.isRead) FontWeight.Bold else FontWeight.Normal,
-                    color = contentColor
-                )
-                Text(
-                    text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(announcement.timestamp)),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = contentColor.copy(alpha = 0.7f)
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    if (!announcement.isRead) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(
+                        text = announcement.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = if (!announcement.isRead) FontWeight.ExtraBold else FontWeight.Bold,
+                        maxLines = if (isExpanded) Int.MAX_VALUE else 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                CategoryChip(text = announcement.category)
             }
+            
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = announcement.content,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (!announcement.isRead) Color.Black else MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(announcement.timestamp)),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()).format(Date(announcement.timestamp)),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+                if (!isExpanded) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "• Click to read",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            AnimatedVisibility(visible = isExpanded) {
+                Column {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    if (announcement.imageUrl != null) {
+                        AsyncImage(
+                            model = announcement.imageUrl,
+                            contentDescription = "Announcement Image",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
+                    Text(
+                        text = announcement.content,
+                        style = MaterialTheme.typography.bodyLarge,
+                        lineHeight = 24.sp
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Comments (${comments.size})",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        IconButton(onClick = { isExpanded = false }) {
+                            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Collapse")
+                        }
+                    }
+
+                    CommentSection(
+                        announcementId = announcement.id,
+                        comments = comments,
+                        viewModel = viewModel,
+                        currentStudentNumber = currentStudentNumber
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CommentSection(
+    announcementId: Int,
+    comments: List<Comment>,
+    viewModel: AnnouncementsViewModel,
+    currentStudentNumber: String
+) {
+    var newCommentText by remember { mutableStateOf("") }
+
+    Column(modifier = Modifier.padding(top = 8.dp)) {
+        comments.forEach { comment ->
+            CommentItem(
+                comment = comment,
+                isOwnComment = comment.studentNumber == currentStudentNumber,
+                onDelete = { viewModel.deleteComment(comment) },
+                onEdit = { viewModel.updateComment(comment, it) },
+                onReport = { viewModel.reportComment(comment.id) }
             )
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = newCommentText,
+                onValueChange = { newCommentText = it },
+                placeholder = { Text("Add a comment...", fontSize = 14.sp) },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(24.dp),
+                maxLines = 3,
+                textStyle = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(
+                onClick = {
+                    if (newCommentText.isNotBlank()) {
+                        viewModel.addComment(announcementId, newCommentText)
+                        newCommentText = ""
+                    }
+                },
+                enabled = newCommentText.isNotBlank(),
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    disabledContentColor = MaterialTheme.colorScheme.outline
+                )
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+            }
+        }
+    }
+}
+
+@Composable
+fun CommentItem(
+    comment: Comment,
+    isOwnComment: Boolean,
+    onDelete: () -> Unit,
+    onEdit: (String) -> Unit,
+    onReport: () -> Unit
+) {
+    var showMenu by remember { mutableStateOf(false) }
+    var isEditing by remember { mutableStateOf(false) }
+    var editText by remember { mutableStateOf(comment.content) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = comment.studentName.take(1).uppercase(),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+        
+        Spacer(modifier = Modifier.width(8.dp))
+        
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(topStart = 0.dp, topEnd = 12.dp, bottomEnd = 12.dp, bottomStart = 12.dp)
+                )
+                .padding(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = comment.studentName,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(comment.timestamp)),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+            
+            if (isEditing) {
+                OutlinedTextField(
+                    value = editText,
+                    onValueChange = { editText = it },
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    trailingIcon = {
+                        IconButton(onClick = { onEdit(editText); isEditing = false }) {
+                            Icon(Icons.Default.Check, contentDescription = "Save", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    },
+                    shape = RoundedCornerShape(8.dp)
+                )
+            } else {
+                Text(
+                    text = comment.content, 
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+        }
+        
+        Box {
+            IconButton(onClick = { showMenu = true }, modifier = Modifier.size(24.dp)) {
+                Icon(Icons.Default.MoreVert, contentDescription = "More", modifier = Modifier.size(16.dp))
+            }
+            DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                if (isOwnComment) {
+                    DropdownMenuItem(
+                        text = { Text("Edit") },
+                        onClick = { isEditing = true; showMenu = false },
+                        leadingIcon = { Icon(Icons.Default.Edit, null) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Delete") },
+                        onClick = { onDelete(); showMenu = false },
+                        leadingIcon = { Icon(Icons.Default.Delete, null) }
+                    )
+                } else {
+                    DropdownMenuItem(
+                        text = { Text("Report") },
+                        onClick = { onReport(); showMenu = false },
+                        leadingIcon = { Icon(Icons.Default.Flag, null) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CategoryChip(text: String) {
+    val color = when (text) {
+        "Urgent" -> MaterialTheme.colorScheme.error
+        "Event" -> MaterialTheme.colorScheme.primary
+        "Seminar" -> MaterialTheme.colorScheme.secondary
+        else -> MaterialTheme.colorScheme.tertiary
+    }
+    Surface(
+        color = color.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.5f))
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            fontWeight = FontWeight.Bold
+        )
     }
 }

@@ -10,38 +10,23 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface DepartmentDao {
+
+    @Transaction
+    @Query("SELECT * FROM departments")
+    fun getDepartmentsWithStudents(): Flow<List<DepartmentWithStudents>>
+
+    @Query("SELECT * FROM students WHERE name = :name LIMIT 1")
+    suspend fun getStudentByName(name: String): Student?
+
+    @Query("SELECT * FROM students WHERE studentNumber = :studentNumber LIMIT 1")
+    suspend fun getStudentByStudentNumber(studentNumber: String): Student?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDepartments(departments: List<Department>)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertStudents(students: List<Student>)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertGrades(grades: List<Grade>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStudent(student: Student)
 
     @Delete
     suspend fun deleteStudent(student: Student)
-
-    @Query("DELETE FROM departments")
-    suspend fun clearDepartments()
-
-    @Query("DELETE FROM students")
-    suspend fun clearStudents()
-
-    @Query("DELETE FROM grades")
-    suspend fun clearGrades()
-
-    @Transaction
-    suspend fun prePopulate() {
-        clearDepartments()
-        clearStudents()
-        clearGrades()
-    }
-
-    @Transaction
-    @Query("SELECT * FROM departments")
-    fun getDepartmentsWithStudents(): Flow<List<DepartmentWithStudents>>
 }

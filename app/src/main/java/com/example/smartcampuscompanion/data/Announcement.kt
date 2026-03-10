@@ -9,7 +9,11 @@ data class Announcement(
     val id: Int = 0,
     val title: String,
     val content: String,
-    val type: String, // "ADD", "UPDATE", "DELETE"
+    val category: String, // "Event", "Activity", "Urgent", "Seminar"
+    val departmentName: String? = null,
+    val dueDate: Long,
+    val studentNumber: String? = null,
+    val imageUrl: String? = null, // Path or URI to the image
     val isRead: Boolean = false,
     val timestamp: Long = System.currentTimeMillis()
 )
