@@ -1,19 +1,12 @@
 package com.example.smartcampuscompanion.data
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.Query
-import androidx.room.Update
+import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TaskDao {
-    @Query("SELECT * FROM tasks ORDER BY dueDate ASC")
-    fun getAllTasks(): Flow<List<Task>>
-
-    @Query("SELECT * FROM tasks WHERE departmentName = :departmentName ORDER BY dueDate ASC")
-    fun getTasksByDepartment(departmentName: String): Flow<List<Task>>
+    @Query("SELECT * FROM tasks WHERE studentNumber = :studentNumber ORDER BY dueDate ASC")
+    fun getTasksForStudent(studentNumber: String): Flow<List<Task>>
 
     @Insert
     suspend fun insert(task: Task)

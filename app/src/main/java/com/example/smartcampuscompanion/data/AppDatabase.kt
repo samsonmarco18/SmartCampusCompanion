@@ -10,14 +10,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Database(
-    entities = [Task::class, Department::class, Student::class, Grade::class],
-    version = 1, // Resetting version for the new database
+    entities = [Task::class, Department::class, Student::class, Grade::class, Announcement::class, Comment::class],
+    version = 12,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun taskDao(): TaskDao
     abstract fun departmentDao(): DepartmentDao
+    abstract fun announcementDao(): AnnouncementDao
+    abstract fun commentDao(): CommentDao
 
     companion object {
         @Volatile
@@ -28,12 +30,27 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "smart_campus_companion_database_v2" // Changed database name
+                    "smart_campus_companion_database_v2"
                 )
                     .fallbackToDestructiveMigration()
+                    .addCallback(AppDatabaseCallback(context))
                     .build()
                 INSTANCE = instance
                 instance
+            }
+        }
+    }
+
+    private class AppDatabaseCallback(
+        private val context: Context
+    ) : RoomDatabase.Callback() {
+        override fun onCreate(db: SupportSQLiteDatabase) {
+            super.onCreate(db)
+            INSTANCE?.let {
+                CoroutineScope(Dispatchers.IO).launch {
+                    val departmentDao = getDatabase(context).departmentDao()
+                    CampusRepository(departmentDao).checkAndPopulate()
+                }
             }
         }
     }
