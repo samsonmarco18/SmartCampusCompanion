@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 
-class StudentRecordViewModel(application: Application) : AndroidViewModel(application) {
+class StudentRecordViewModel(application: Application, campusRepository: CampusRepository) : AndroidViewModel(application) {
 
     private val repository: CampusRepository
 
