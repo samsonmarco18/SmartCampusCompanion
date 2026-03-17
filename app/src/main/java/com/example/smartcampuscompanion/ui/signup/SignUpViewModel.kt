@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartcampuscompanion.data.Announcement
-import com.example.smartcampuscompanion.data.AppDatabase
+import com.example.smartcampuscompanion.data.AnnouncementRepository
 import com.example.smartcampuscompanion.data.CampusRepository
 import com.example.smartcampuscompanion.data.Student
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,17 +12,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
 
-class SignUpViewModel(application: Application) : AndroidViewModel(application) {
+class SignUpViewModel(
+    application: Application,
+    private val campusRepository: CampusRepository,
+    private val announcementRepository: AnnouncementRepository
+) : AndroidViewModel(application) {
 
-    private val campusRepository: CampusRepository
-    private val announcementDao = AppDatabase.getDatabase(application).announcementDao()
     private val _signUpState = MutableStateFlow<SignUpState>(SignUpState.Idle)
     val signUpState: StateFlow<SignUpState> = _signUpState
-
-    init {
-        val departmentDao = AppDatabase.getDatabase(application).departmentDao()
-        campusRepository = CampusRepository(departmentDao)
-    }
 
     fun signUp(studentNumber: String, username: String, password: String, confirmPassword: String, department: String?, yearLevel: String?) {
         if (password != confirmPassword) {
@@ -46,7 +43,7 @@ class SignUpViewModel(application: Application) : AndroidViewModel(application) 
                     dueDate = System.currentTimeMillis(),
                     studentNumber = studentNumber
                 )
-                announcementDao.insert(announcement)
+                announcementRepository.insertAnnouncement(announcement)
                 _signUpState.value = SignUpState.Error("Student number already exists")
                 return@launch
             }

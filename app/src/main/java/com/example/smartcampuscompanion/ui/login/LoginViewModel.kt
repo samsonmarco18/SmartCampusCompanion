@@ -3,7 +3,6 @@ package com.example.smartcampuscompanion.ui.login
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.smartcampuscompanion.data.AppDatabase
 import com.example.smartcampuscompanion.data.CampusRepository
 import com.example.smartcampuscompanion.util.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,16 +10,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
 
-class LoginViewModel(application: Application, private val sessionManager: SessionManager) : AndroidViewModel(application) {
-
+class LoginViewModel(
+    application: Application,
+    private val sessionManager: SessionManager,
     private val campusRepository: CampusRepository
+) : AndroidViewModel(application) {
+
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState: StateFlow<LoginState> = _loginState
-
-    init {
-        val departmentDao = AppDatabase.getDatabase(application).departmentDao()
-        campusRepository = CampusRepository(departmentDao)
-    }
 
     fun login(username: String, password: String) {
         viewModelScope.launch {

@@ -125,26 +125,6 @@ fun StudentRecordScreen(onBackClick: () -> Unit = {}) {
                     }
                 }
             }
-
-            // Status indicator section (Green for Regular, Red otherwise)
-            val isRegular = student.status.equals("Regular", ignoreCase = true)
-            val statusColor = if (isRegular) Color(0xFF00897B) else Color(0xFFD32F2F)
-            val statusLabel = if (isRegular) "R" else "I"
-
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(60.dp)
-                    .background(statusColor),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = statusLabel,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-            }
         }
     }
 }
