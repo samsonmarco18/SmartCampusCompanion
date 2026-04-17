@@ -33,7 +33,7 @@ class LoginViewModel(application: Application, private val sessionManager: Sessi
 
                 if (student.password == passwordHash) {
                     sessionManager.saveSession(student.name, student.studentNumber, student.role)
-                    _loginState.value = LoginState.Success
+                    _loginState.value = LoginState.Success(student.adminMessage)
                 } else {
                     _loginState.value = LoginState.Error("Invalid credentials")
                 }
@@ -47,6 +47,6 @@ class LoginViewModel(application: Application, private val sessionManager: Sessi
 sealed class LoginState {
     object Idle : LoginState()
     object Loading : LoginState()
-    object Success : LoginState()
+    data class Success(val adminMessage: String? = null) : LoginState()
     data class Error(val message: String) : LoginState()
 }

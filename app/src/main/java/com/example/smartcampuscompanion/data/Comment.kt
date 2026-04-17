@@ -31,5 +31,7 @@ data class Comment(
     val studentName: String,
     val content: String,
     val timestamp: Long = System.currentTimeMillis(),
-    val isReported: Boolean = false
+    val isReported: Boolean = false,
+    val reportedBy: String? = null,
+    val reportReason: String? = null
 )

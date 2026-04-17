@@ -38,10 +38,38 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignUp: () -> Unit) {
     val loginViewModel: LoginViewModel = viewModel(factory = ViewModelFactory(context.applicationContext as Application))
     val loginState by loginViewModel.loginState.collectAsState()
 
+    var showAdminMessage by remember { mutableStateOf(false) }
+    var adminMessage by remember { mutableStateOf("") }
+
     LaunchedEffect(loginState) {
         if (loginState is LoginState.Success) {
-            onLoginSuccess()
+            val message = (loginState as LoginState.Success).adminMessage
+            if (!message.isNullOrBlank()) {
+                adminMessage = message
+                showAdminMessage = true
+            } else {
+                onLoginSuccess()
+            }
         }
+    }
+
+    if (showAdminMessage) {
+        AlertDialog(
+            onDismissRequest = { 
+                showAdminMessage = false
+                onLoginSuccess()
+            },
+            title = { Text("Notice from Admin") },
+            text = { Text(adminMessage) },
+            confirmButton = {
+                Button(onClick = { 
+                    showAdminMessage = false
+                    onLoginSuccess()
+                }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 
     Scaffold(

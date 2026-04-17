@@ -27,9 +27,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.smartcampuscompanion.data.Announcement
+import com.example.smartcampuscompanion.data.AnnouncementWithReadStatus
 import com.example.smartcampuscompanion.data.Comment
 import com.example.smartcampuscompanion.util.SessionManager
 import com.example.smartcampuscompanion.util.ViewModelFactory
@@ -90,9 +92,9 @@ fun AnnouncementsScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(announcements, key = { it.id }) { announcement ->
+                items(announcements, key = { it.announcement.id }) { announcementWithStatus ->
                     AnnouncementCard(
-                        announcement = announcement,
+                        announcementWithStatus = announcementWithStatus,
                         viewModel = viewModel,
                         currentStudentNumber = currentStudentNumber
                     )
@@ -104,10 +106,12 @@ fun AnnouncementsScreen(
 
 @Composable
 fun AnnouncementCard(
-    announcement: Announcement,
+    announcementWithStatus: AnnouncementWithReadStatus,
     viewModel: AnnouncementsViewModel,
     currentStudentNumber: String
 ) {
+    val announcement = announcementWithStatus.announcement
+    val isRead = announcementWithStatus.isRead
     var isExpanded by remember { mutableStateOf(false) }
     val comments by viewModel.getComments(announcement.id).collectAsState(initial = emptyList())
 
@@ -116,16 +120,16 @@ fun AnnouncementCard(
             .fillMaxWidth()
             .clickable {
                 isExpanded = !isExpanded
-                if (!announcement.isRead) {
+                if (!isRead) {
                     viewModel.markAsRead(announcement.id)
                 }
             }
             .animateContentSize(),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isExpanded) 4.dp else 2.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (announcement.isRead) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            containerColor = if (isRead) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         ),
-        border = if (!announcement.isRead) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) else null
+        border = if (!isRead) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) else null
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -134,7 +138,7 @@ fun AnnouncementCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                    if (!announcement.isRead) {
+                    if (!isRead) {
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
@@ -146,7 +150,7 @@ fun AnnouncementCard(
                     Text(
                         text = announcement.title,
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = if (!announcement.isRead) FontWeight.ExtraBold else FontWeight.Bold,
+                        fontWeight = if (!isRead) FontWeight.ExtraBold else FontWeight.Bold,
                         maxLines = if (isExpanded) Int.MAX_VALUE else 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -243,7 +247,7 @@ fun CommentSection(
                 isOwnComment = comment.studentNumber == currentStudentNumber,
                 onDelete = { viewModel.deleteComment(comment) },
                 onEdit = { viewModel.updateComment(comment, it) },
-                onReport = { viewModel.reportComment(comment.id) }
+                onReport = { reason -> viewModel.reportComment(comment.id, reason) }
             )
         }
 
@@ -288,11 +292,12 @@ fun CommentItem(
     isOwnComment: Boolean,
     onDelete: () -> Unit,
     onEdit: (String) -> Unit,
-    onReport: () -> Unit
+    onReport: (String) -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var isEditing by remember { mutableStateOf(false) }
     var editText by remember { mutableStateOf(comment.content) }
+    var showReportDialog by remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
@@ -383,13 +388,73 @@ fun CommentItem(
                 } else {
                     DropdownMenuItem(
                         text = { Text("Report") },
-                        onClick = { onReport(); showMenu = false },
+                        onClick = { showReportDialog = true; showMenu = false },
                         leadingIcon = { Icon(Icons.Default.Flag, null) }
                     )
                 }
             }
         }
     }
+
+    if (showReportDialog) {
+        ReportDialog(
+            onDismiss = { showReportDialog = false },
+            onReport = { reason ->
+                onReport(reason)
+                showReportDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun ReportDialog(onDismiss: () -> Unit, onReport: (String) -> Unit) {
+    var reason by remember { mutableStateOf("") }
+    val reasons = listOf("Spam", "Harassment", "Inappropriate content", "Other")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Report Comment") },
+        text = {
+            Column {
+                Text("Select a reason for reporting this comment:")
+                Spacer(modifier = Modifier.height(8.dp))
+                reasons.forEach { r ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { reason = r }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = (reason == r), onClick = { reason = r })
+                        Text(r, modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+                if (reason == "Other") {
+                    OutlinedTextField(
+                        value = reason,
+                        onValueChange = { reason = it },
+                        placeholder = { Text("Specify reason...") },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { if (reason.isNotBlank()) onReport(reason) },
+                enabled = reason.isNotBlank()
+            ) {
+                Text("Report")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
