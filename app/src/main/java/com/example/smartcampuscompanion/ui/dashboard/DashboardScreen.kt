@@ -54,11 +54,13 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,6 +68,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smartcampuscompanion.ui.announcements.AnnouncementsViewModel
 import com.example.smartcampuscompanion.ui.campus_info.CampusViewModel
 import com.example.smartcampuscompanion.ui.navigation.Screen
+import com.example.smartcampuscompanion.util.SessionManager
 import kotlinx.coroutines.launch
 
 data class DashboardItem(
@@ -89,6 +92,10 @@ fun DashboardScreen(
     campusViewModel: CampusViewModel = viewModel(),
     announcementsViewModel: AnnouncementsViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+    val role = sessionManager.fetchRole() ?: "student"
+
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     
@@ -98,23 +105,34 @@ fun DashboardScreen(
 
     val unreadCount by announcementsViewModel.unreadAnnouncementsCount.collectAsState()
 
-    val items = listOf(
-        DashboardItem("Campus Info", Icons.Default.Info, onNavigateToCampusInfo),
-        DashboardItem("Schedule", Icons.Default.CalendarMonth, onNavigateToSchedule),
-        DashboardItem("Student Record", Icons.Default.School, onNavigateToStudentRecord),
-        DashboardItem("Announcement Manager", Icons.Default.Announcement, onNavigateToAnnouncementManager),
-        DashboardItem("Announcements", Icons.Default.Notifications, onNavigateToNotifications, badgeCount = unreadCount),
-        DashboardItem("Profile", Icons.Default.Person, onNavigateToProfile),
-    )
+    val items = mutableListOf<DashboardItem>()
+    items.add(DashboardItem("Campus Info", Icons.Default.Info, onNavigateToCampusInfo))
+    if (role == "student") {
+        items.add(DashboardItem("Schedule", Icons.Default.CalendarMonth, onNavigateToSchedule))
+    }
+    if (role == "admin") {
+        items.add(DashboardItem("Student Record", Icons.Default.School, onNavigateToStudentRecord))
+        items.add(DashboardItem("Announcement Manager", Icons.Default.Announcement, onNavigateToAnnouncementManager))
+    }
+    items.add(DashboardItem("Announcements", Icons.Default.Notifications, onNavigateToNotifications, badgeCount = unreadCount))
+    items.add(DashboardItem("Profile", Icons.Default.Person, onNavigateToProfile))
 
-    val navigationItems = listOf(
-        Screen.CampusInfo,
-        Screen.TaskManager,
-        Screen.StudentRecord,
-        Screen.AnnouncementManager,
-        Screen.Announcements,
-        Screen.Profile,
-    )
+    val navigationItems = if (role == "admin") {
+        listOf(
+            Screen.CampusInfo,
+            Screen.StudentRecord,
+            Screen.AnnouncementManager,
+            Screen.Announcements,
+            Screen.Profile,
+        )
+    } else {
+        listOf(
+            Screen.CampusInfo,
+            Screen.TaskManager,
+            Screen.Announcements,
+            Screen.Profile,
+        )
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,

@@ -2,6 +2,7 @@ package com.example.smartcampuscompanion.data
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import java.security.MessageDigest
 
 class CampusRepository(private val departmentDao: DepartmentDao) {
 
@@ -25,6 +26,12 @@ class CampusRepository(private val departmentDao: DepartmentDao) {
         departmentDao.deleteStudent(student)
     }
 
+    private fun hashPassword(password: String): String {
+        return MessageDigest.getInstance("SHA-256")
+            .digest(password.toByteArray())
+            .fold("") { str, it -> str + "%02x".format(it) }
+    }
+
     suspend fun checkAndPopulate() {
         // This check ensures we only populate the database once.
         if (departmentDao.getDepartmentsWithStudents().first().isEmpty()) {
@@ -40,6 +47,18 @@ class CampusRepository(private val departmentDao: DepartmentDao) {
             )
             departmentDao.insertDepartments(departments)
 
+            // Add an Admin account
+            val adminPassword = hashPassword("admin123")
+            val admin = Student(
+                studentNumber = "ADMIN001",
+                name = "Admin",
+                password = adminPassword,
+                email = "admin@university.edu",
+                yearLevel = "N/A",
+                departmentName = "Computer Science",
+                role = "admin"
+            )
+            departmentDao.insertStudent(admin)
         }
     }
 }

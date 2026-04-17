@@ -10,13 +10,15 @@ class SessionManager(context: Context) {
     companion object {
         const val USERNAME = "username"
         const val STUDENT_NUMBER = "student_number"
+        const val ROLE = "role"
         const val DARK_MODE = "dark_mode"
     }
 
-    fun saveSession(username: String, studentNumber: String) {
+    fun saveSession(username: String, studentNumber: String, role: String) {
         prefs.edit {
             putString(USERNAME, username)
             putString(STUDENT_NUMBER, studentNumber)
+            putString(ROLE, role)
         }
     }
 
@@ -34,10 +36,15 @@ class SessionManager(context: Context) {
         return prefs.getString(STUDENT_NUMBER, null)
     }
 
+    fun fetchRole(): String? {
+        return prefs.getString(ROLE, null)
+    }
+
     fun clearSession() {
         prefs.edit {
             remove(USERNAME)
             remove(STUDENT_NUMBER)
+            remove(ROLE)
         }
     }
 

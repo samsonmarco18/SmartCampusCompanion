@@ -30,5 +30,6 @@ data class Student(
     val yearLevel: String,
     val departmentName: String,
     val status: String = "Regular",
-    val profileImageUrl: String? = null
+    val profileImageUrl: String? = null,
+    val role: String = "student"
 )

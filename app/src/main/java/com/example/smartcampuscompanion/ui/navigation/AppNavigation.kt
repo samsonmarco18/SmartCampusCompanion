@@ -107,7 +107,12 @@ fun AppNavigation(
             CampusInfoScreen(viewModel = campusViewModel, onNavigateUp = { navController.navigateUp() })
         }
         composable(Screen.TaskManager.route) {
-            TaskManagerScreen(onNavigateUp = { navController.navigateUp() })
+            val role = sessionManager.fetchRole()
+            if (role == "student") {
+                TaskManagerScreen(onNavigateUp = { navController.navigateUp() })
+            } else {
+                navController.navigateUp()
+            }
         }
         composable(Screen.Announcements.route) {
             AnnouncementsScreen(onNavigateUp = { navController.navigateUp() })
@@ -124,10 +129,20 @@ fun AppNavigation(
             )
         }
         composable(Screen.StudentRecord.route) {
-            StudentRecordScreen(onBackClick = { navController.navigateUp() })
+            val role = sessionManager.fetchRole()
+            if (role == "admin") {
+                StudentRecordScreen(onBackClick = { navController.navigateUp() })
+            } else {
+                navController.navigateUp()
+            }
         }
         composable(Screen.AnnouncementManager.route) {
-            AnnouncementManagerScreen(onNavigateUp = { navController.navigateUp() })
+            val role = sessionManager.fetchRole()
+            if (role == "admin") {
+                AnnouncementManagerScreen(onNavigateUp = { navController.navigateUp() })
+            } else {
+                navController.navigateUp()
+            }
         }
     }
 }

@@ -32,7 +32,7 @@ class LoginViewModel(application: Application, private val sessionManager: Sessi
                     .fold("") { str, it -> str + "%02x".format(it) }
 
                 if (student.password == passwordHash) {
-                    sessionManager.saveSession(student.name, student.studentNumber)
+                    sessionManager.saveSession(student.name, student.studentNumber, student.role)
                     _loginState.value = LoginState.Success
                 } else {
                     _loginState.value = LoginState.Error("Invalid credentials")

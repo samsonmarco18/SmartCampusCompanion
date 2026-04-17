@@ -188,7 +188,7 @@ fun UserProfileView(student: Student, onImageClick: () -> Unit) {
             color = BeigeSecondary
         )
         Text(
-            text = "Student Account",
+            text = if (student.role == "admin") "Administrator Account" else "Student Account",
             style = MaterialTheme.typography.bodyMedium,
             color = Color.Gray
         )
@@ -198,11 +198,12 @@ fun UserProfileView(student: Student, onImageClick: () -> Unit) {
         SectionHeader("Personal Information")
         ProfileInfoRow(icon = Icons.Default.Person, label = "Username", value = student.name)
         ProfileInfoRow(icon = Icons.Default.School, label = "Department", value = student.departmentName)
-        ProfileInfoRow(icon = Icons.Default.School, label = "Year Level", value = student.yearLevel)
+        if (student.role != "admin") {
+            ProfileInfoRow(icon = Icons.Default.School, label = "Year Level", value = student.yearLevel)
+        }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SectionHeader(name: String) {
     Surface(
@@ -263,6 +264,7 @@ fun EditProfileView(
                 value = password,
                 onValueChange = onPasswordChange,
                 label = { Text("New Password") },
+                visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(32.dp))
@@ -284,7 +286,7 @@ fun EditProfileView(
 
 @Composable
 fun ProfileInfoRow(icon: ImageVector, label: String, value: String) {
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),

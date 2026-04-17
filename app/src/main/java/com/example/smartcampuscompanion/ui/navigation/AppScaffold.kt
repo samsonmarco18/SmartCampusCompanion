@@ -8,11 +8,14 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.smartcampuscompanion.util.SessionManager
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -22,14 +25,35 @@ fun AppScaffold(
     topBarTitle: String,
     content: @Composable (Modifier) -> Unit
 ) {
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+    val role = sessionManager.fetchRole() ?: "student"
+
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val navigationItems = listOf(
-        Screen.Dashboard, Screen.CampusInfo, Screen.TaskManager, Screen.Announcements, Screen.AnnouncementManager, Screen.Profile, Screen.Settings, Screen.StudentRecord
-    )
+    val navigationItems = if (role == "admin") {
+        listOf(
+            Screen.Dashboard,
+            Screen.CampusInfo,
+            Screen.Announcements,
+            Screen.AnnouncementManager,
+            Screen.Profile,
+            Screen.Settings,
+            Screen.StudentRecord
+        )
+    } else {
+        listOf(
+            Screen.Dashboard,
+            Screen.CampusInfo,
+            Screen.TaskManager,
+            Screen.Announcements,
+            Screen.Profile,
+            Screen.Settings
+        )
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
