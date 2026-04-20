@@ -4,28 +4,63 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartcampuscompanion.data.Announcement
-import com.example.smartcampuscompanion.data.AppDatabase
-import kotlinx.coroutines.flow.SharingStarted
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class AnnouncementManagerViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val announcementDao = AppDatabase.getDatabase(application).announcementDao()
+    private val firestore = FirebaseFirestore.getInstance()
+    private val _announcements = MutableStateFlow<List<Announcement>>(emptyList())
+    val announcements: StateFlow<List<Announcement>> = _announcements
 
-    val announcements: StateFlow<List<Announcement>> = announcementDao.getAllAnnouncements()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    init {
+        fetchAnnouncements()
+    }
+
+    private fun fetchAnnouncements() {
+        firestore.collection("announcements")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+                if (snapshot != null) {
+                    _announcements.value = snapshot.documents.mapNotNull { doc ->
+                        doc.toObject(Announcement::class.java)?.apply {
+                            docId = doc.id
+                        }
+                    }
+                }
+            }
+    }
 
     fun insert(announcement: Announcement) = viewModelScope.launch {
-        announcementDao.insert(announcement)
+        try {
+            firestore.collection("announcements").add(announcement).await()
+        } catch (e: Exception) {
+            // Handle error
+        }
     }
 
     fun update(announcement: Announcement) = viewModelScope.launch {
-        announcementDao.update(announcement)
+        if (announcement.docId.isNotEmpty()) {
+            try {
+                firestore.collection("announcements").document(announcement.docId).set(announcement).await()
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
     }
 
     fun delete(announcement: Announcement) = viewModelScope.launch {
-        announcementDao.delete(announcement)
+        if (announcement.docId.isNotEmpty()) {
+            try {
+                firestore.collection("announcements").document(announcement.docId).delete().await()
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
     }
 }

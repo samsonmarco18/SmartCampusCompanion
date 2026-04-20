@@ -24,7 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.smartcampuscompanion.data.DepartmentWithStudents
 import com.example.smartcampuscompanion.data.Student
 import com.example.smartcampuscompanion.util.ViewModelFactory
 
@@ -33,7 +32,7 @@ import com.example.smartcampuscompanion.util.ViewModelFactory
 fun StudentRecordScreen(onBackClick: () -> Unit = {}) {
     val context = LocalContext.current
     val studentRecordViewModel: StudentRecordViewModel = viewModel(factory = ViewModelFactory(context.applicationContext as Application))
-    val departmentsWithStudents by studentRecordViewModel.departmentsWithStudents.collectAsState()
+    val groupedStudents by studentRecordViewModel.groupedStudents.collectAsState()
 
     Scaffold(
         topBar = {
@@ -86,7 +85,7 @@ fun StudentRecordScreen(onBackClick: () -> Unit = {}) {
                     )
                     Spacer(modifier = Modifier.width(24.dp))
                     Text(
-                        text = "Total: ${departmentsWithStudents.sumOf { it.students.size }}",
+                        text = "Total: ${groupedStudents.sumOf { it.students.size }}",
                         color = MaterialTheme.colorScheme.onSecondary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
@@ -96,7 +95,7 @@ fun StudentRecordScreen(onBackClick: () -> Unit = {}) {
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        if (departmentsWithStudents.isEmpty()) {
+        if (groupedStudents.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -116,12 +115,12 @@ fun StudentRecordScreen(onBackClick: () -> Unit = {}) {
                     .padding(paddingValues),
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
-                departmentsWithStudents.forEach { departmentWithStudents ->
+                groupedStudents.forEach { department ->
                     item {
-                        DepartmentHeader(departmentWithStudents.department.name)
+                        DepartmentHeader(department.departmentName)
                     }
-                    items(departmentWithStudents.students) { studentWithGrades ->
-                        StudentRecordCard(student = studentWithGrades.student)
+                    items(department.students) { student ->
+                        StudentRecordCard(student = student)
                     }
                 }
             }

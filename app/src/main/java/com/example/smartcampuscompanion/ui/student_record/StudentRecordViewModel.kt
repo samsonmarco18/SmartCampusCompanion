@@ -5,25 +5,36 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartcampuscompanion.data.AppDatabase
 import com.example.smartcampuscompanion.data.CampusRepository
-import com.example.smartcampuscompanion.data.DepartmentWithStudents
-import kotlinx.coroutines.flow.SharingStarted
+import com.example.smartcampuscompanion.data.Student
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+data class DepartmentWithStudentsFirestore(
+    val departmentName: String,
+    val students: List<Student>
+)
 
 class StudentRecordViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository: CampusRepository
+    private val database = AppDatabase.getDatabase(application)
+    private val repository = CampusRepository(database.departmentDao())
 
-    val departmentsWithStudents: StateFlow<List<DepartmentWithStudents>>
+    private val _groupedStudents = MutableStateFlow<List<DepartmentWithStudentsFirestore>>(emptyList())
+    val groupedStudents: StateFlow<List<DepartmentWithStudentsFirestore>> = _groupedStudents
 
     init {
-        val departmentDao = AppDatabase.getDatabase(application).departmentDao()
-        repository = CampusRepository(departmentDao)
-        departmentsWithStudents = repository.getDepartmentsWithStudents()
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = emptyList()
-            )
+        loadStudents()
+    }
+
+    private fun loadStudents() {
+        viewModelScope.launch {
+            val allStudents = repository.getAllStudents()
+            val grouped = allStudents.groupBy { it.departmentName }
+                .map { (deptName, students) ->
+                    DepartmentWithStudentsFirestore(deptName, students)
+                }
+            _groupedStudents.value = grouped
+        }
     }
 }

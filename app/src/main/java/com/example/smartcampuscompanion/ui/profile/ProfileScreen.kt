@@ -25,8 +25,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -36,6 +34,7 @@ import com.example.smartcampuscompanion.ui.theme.BeigeBackground
 import com.example.smartcampuscompanion.ui.theme.BeigePrimary
 import com.example.smartcampuscompanion.ui.theme.BeigeSecondary
 import com.example.smartcampuscompanion.util.ViewModelFactory
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,7 +69,7 @@ fun ProfileScreen(onNavigateUp: () -> Unit = {}) {
                 is ProfileState.Success -> {
                     ProfileContent(
                         student = state.student,
-                        onUpdate = profileViewModel::updateUser,
+                        onUpdate = { name, password -> profileViewModel.updateUser(name, password) },
                         onUpdateImage = profileViewModel::updateUserProfileImage
                     )
                 }
@@ -88,7 +87,7 @@ fun ProfileScreen(onNavigateUp: () -> Unit = {}) {
 @Composable
 fun ProfileContent(
     student: Student,
-    onUpdate: (String, String, String) -> Unit,
+    onUpdate: (String, String?) -> Unit,
     onUpdateImage: (String) -> Unit
 ) {
     var isEditing by remember { mutableStateOf(false) }
@@ -112,7 +111,7 @@ fun ProfileContent(
                     password = newPassword,
                     onPasswordChange = { newPassword = it },
                     onSave = {
-                        onUpdate(student.name, newUsername, newPassword)
+                        onUpdate(newUsername, newPassword.ifBlank { null })
                         isEditing = false
                     },
                     onCancel = { isEditing = false }

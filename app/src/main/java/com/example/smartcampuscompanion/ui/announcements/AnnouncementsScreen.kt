@@ -27,11 +27,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.smartcampuscompanion.data.Announcement
-import com.example.smartcampuscompanion.data.AnnouncementWithReadStatus
 import com.example.smartcampuscompanion.data.Comment
 import com.example.smartcampuscompanion.util.SessionManager
 import com.example.smartcampuscompanion.util.ViewModelFactory
@@ -92,9 +90,9 @@ fun AnnouncementsScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(announcements, key = { it.announcement.id }) { announcementWithStatus ->
+                items(announcements, key = { it.docId }) { announcement ->
                     AnnouncementCard(
-                        announcementWithStatus = announcementWithStatus,
+                        announcement = announcement,
                         viewModel = viewModel,
                         currentStudentNumber = currentStudentNumber
                     )
@@ -106,30 +104,25 @@ fun AnnouncementsScreen(
 
 @Composable
 fun AnnouncementCard(
-    announcementWithStatus: AnnouncementWithReadStatus,
+    announcement: Announcement,
     viewModel: AnnouncementsViewModel,
     currentStudentNumber: String
 ) {
-    val announcement = announcementWithStatus.announcement
-    val isRead = announcementWithStatus.isRead
     var isExpanded by remember { mutableStateOf(false) }
-    val comments by viewModel.getComments(announcement.id).collectAsState(initial = emptyList())
+    val comments by viewModel.getComments(announcement.docId).collectAsState(initial = emptyList())
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
                 isExpanded = !isExpanded
-                if (!isRead) {
-                    viewModel.markAsRead(announcement.id)
-                }
+                viewModel.markAsRead(announcement.docId)
             }
             .animateContentSize(),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isExpanded) 4.dp else 2.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isRead) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        ),
-        border = if (!isRead) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) else null
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -137,24 +130,14 @@ fun AnnouncementCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                    if (!isRead) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    Text(
-                        text = announcement.title,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = if (!isRead) FontWeight.ExtraBold else FontWeight.Bold,
-                        maxLines = if (isExpanded) Int.MAX_VALUE else 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                Text(
+                    text = announcement.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = if (isExpanded) Int.MAX_VALUE else 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
                 CategoryChip(text = announcement.category)
             }
             
@@ -166,14 +149,6 @@ fun AnnouncementCard(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline
                 )
-                if (!isExpanded) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "• Click to read",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
             }
 
             AnimatedVisibility(visible = isExpanded) {
@@ -220,7 +195,7 @@ fun AnnouncementCard(
                     }
 
                     CommentSection(
-                        announcementId = announcement.id,
+                        announcementDocId = announcement.docId,
                         comments = comments,
                         viewModel = viewModel,
                         currentStudentNumber = currentStudentNumber
@@ -233,7 +208,7 @@ fun AnnouncementCard(
 
 @Composable
 fun CommentSection(
-    announcementId: Int,
+    announcementDocId: String,
     comments: List<Comment>,
     viewModel: AnnouncementsViewModel,
     currentStudentNumber: String
@@ -247,7 +222,7 @@ fun CommentSection(
                 isOwnComment = comment.studentNumber == currentStudentNumber,
                 onDelete = { viewModel.deleteComment(comment) },
                 onEdit = { viewModel.updateComment(comment, it) },
-                onReport = { reason -> viewModel.reportComment(comment.id, reason) }
+                onReport = { reason -> viewModel.reportComment(comment.docId, reason) }
             )
         }
 
@@ -270,7 +245,7 @@ fun CommentSection(
             IconButton(
                 onClick = {
                     if (newCommentText.isNotBlank()) {
-                        viewModel.addComment(announcementId, newCommentText)
+                        viewModel.addComment(announcementDocId, newCommentText)
                         newCommentText = ""
                     }
                 },
@@ -432,9 +407,10 @@ fun ReportDialog(onDismiss: () -> Unit, onReport: (String) -> Unit) {
                     }
                 }
                 if (reason == "Other") {
+                    var otherReason by remember { mutableStateOf("") }
                     OutlinedTextField(
-                        value = reason,
-                        onValueChange = { reason = it },
+                        value = otherReason,
+                        onValueChange = { otherReason = it; reason = it },
                         placeholder = { Text("Specify reason...") },
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                     )

@@ -5,105 +5,253 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartcampuscompanion.data.*
 import com.example.smartcampuscompanion.util.SessionManager
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.channels.awaitClose
 
 class AnnouncementsViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val database = AppDatabase.getDatabase(application)
-    private val announcementDao = database.announcementDao()
-    private val commentDao = database.commentDao()
-    private val departmentDao = database.departmentDao()
+    private val firestore = FirebaseFirestore.getInstance()
     private val sessionManager = SessionManager(application)
 
-    val announcements: StateFlow<List<AnnouncementWithReadStatus>> = announcementDao.getAnnouncementsForStudent(sessionManager.fetchStudentNumber() ?: "")
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    private val _announcements = MutableStateFlow<List<Announcement>>(emptyList())
+    val announcements: StateFlow<List<Announcement>> = _announcements
 
-    val unreadAnnouncementsCount: StateFlow<Int> = announcementDao.getUnreadCount(sessionManager.fetchStudentNumber() ?: "")
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    private val _unreadCount = MutableStateFlow(0)
+    val unreadAnnouncementsCount: StateFlow<Int> = _unreadCount
 
-    fun getComments(announcementId: Int): Flow<List<Comment>> {
-        return commentDao.getCommentsForAnnouncement(announcementId)
+    init {
+        fetchAnnouncements()
     }
 
-    fun addComment(announcementId: Int, content: String) = viewModelScope.launch {
+    private fun fetchAnnouncements() {
+        val studentNumber = sessionManager.fetchStudentNumber() ?: ""
+        
+        firestore.collection("announcements")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+                
+                if (snapshot != null) {
+                    val list = snapshot.documents.mapNotNull { doc ->
+                        doc.toObject(Announcement::class.java)?.apply {
+                            docId = doc.id
+                        }
+                    }
+                    val filtered = list.filter { it.studentNumber == null || it.studentNumber == studentNumber }
+                    _announcements.value = filtered
+                    updateUnreadCount(filtered)
+                }
+            }
+    }
+
+    private fun updateUnreadCount(announcements: List<Announcement>) {
+        val studentNumber = sessionManager.fetchStudentNumber() ?: return
+        viewModelScope.launch {
+            try {
+                val readStatusDocs = firestore.collection("announcement_read_status")
+                    .whereEqualTo("studentNumber", studentNumber)
+                    .get()
+                    .await()
+                
+                val readIds = readStatusDocs.documents.mapNotNull { it.getString("announcementDocId") }.toSet()
+                _unreadCount.value = announcements.count { it.docId !in readIds }
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
+    fun getComments(announcementDocId: String): Flow<List<Comment>> = callbackFlow {
+        val subscription = firestore.collection("comments")
+            .whereEqualTo("announcementDocId", announcementDocId)
+            .orderBy("timestamp", Query.Direction.ASCENDING)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+                if (snapshot != null) {
+                    val comments = snapshot.documents.mapNotNull { doc ->
+                        doc.toObject(Comment::class.java)?.apply {
+                            docId = doc.id
+                        }
+                    }
+                    trySend(comments)
+                }
+            }
+        awaitClose { subscription.remove() }
+    }
+
+    fun addComment(announcementDocId: String, content: String) = viewModelScope.launch {
         val studentNumber = sessionManager.fetchStudentNumber() ?: return@launch
         val studentName = sessionManager.fetchUsername() ?: "Unknown"
+        
         val comment = Comment(
-            announcementId = announcementId,
+            announcementDocId = announcementDocId,
             studentNumber = studentNumber,
             studentName = studentName,
-            content = content
+            content = content,
+            timestamp = System.currentTimeMillis()
         )
-        commentDao.insert(comment)
+        
+        try {
+            firestore.collection("comments").add(comment).await()
+        } catch (e: Exception) {
+            // Handle error
+        }
     }
 
     fun deleteComment(comment: Comment) = viewModelScope.launch {
         val currentStudentNumber = sessionManager.fetchStudentNumber()
-        if (comment.studentNumber == currentStudentNumber) {
-            commentDao.delete(comment)
+        if (comment.studentNumber == currentStudentNumber && comment.docId.isNotEmpty()) {
+            try {
+                firestore.collection("comments").document(comment.docId).delete().await()
+            } catch (e: Exception) {
+                // Handle error
+            }
         }
     }
 
     fun updateComment(comment: Comment, newContent: String) = viewModelScope.launch {
         val currentStudentNumber = sessionManager.fetchStudentNumber()
-        if (comment.studentNumber == currentStudentNumber) {
-            commentDao.update(comment.copy(content = newContent))
+        if (comment.studentNumber == currentStudentNumber && comment.docId.isNotEmpty()) {
+            try {
+                firestore.collection("comments").document(comment.docId)
+                    .update("content", newContent).await()
+            } catch (e: Exception) {
+                // Handle error
+            }
         }
     }
 
-    fun reportComment(commentId: Int, reason: String) = viewModelScope.launch {
+    fun reportComment(commentId: String, reason: String) = viewModelScope.launch {
         val reporterName = sessionManager.fetchUsername() ?: "Anonymous"
-        commentDao.reportComment(commentId, reporterName, reason)
+        try {
+            firestore.collection("comments").document(commentId).update(
+                mapOf(
+                    "isReported" to true,
+                    "reportedBy" to reporterName,
+                    "reportReason" to reason
+                )
+            ).await()
+        } catch (e: Exception) {
+            // Handle error
+        }
     }
 
-    fun markAsRead(id: Int) = viewModelScope.launch {
+    fun markAsRead(announcementDocId: String) = viewModelScope.launch {
         val studentNumber = sessionManager.fetchStudentNumber() ?: return@launch
-        announcementDao.markAsRead(AnnouncementReadStatus(studentNumber, id))
-    }
-
-    fun delete(announcement: Announcement) = viewModelScope.launch {
-        announcementDao.delete(announcement)
+        try {
+            // Check if already marked as read to avoid duplicates
+            val existing = firestore.collection("announcement_read_status")
+                .whereEqualTo("studentNumber", studentNumber)
+                .whereEqualTo("announcementDocId", announcementDocId)
+                .get()
+                .await()
+            
+            if (existing.isEmpty) {
+                val status = hashMapOf(
+                    "studentNumber" to studentNumber,
+                    "announcementDocId" to announcementDocId
+                )
+                firestore.collection("announcement_read_status").add(status).await()
+                updateUnreadCount(_announcements.value)
+            }
+        } catch (e: Exception) {
+            // Handle error
+        }
     }
 
     // Admin actions for reported comments
-    val reportedComments: Flow<List<Comment>> = commentDao.getReportedComments()
+    val reportedComments: Flow<List<Comment>> = callbackFlow {
+        val subscription = firestore.collection("comments")
+            .whereEqualTo("isReported", true)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+                if (snapshot != null) {
+                    val comments = snapshot.documents.mapNotNull { doc ->
+                        doc.toObject(Comment::class.java)?.apply {
+                            docId = doc.id
+                        }
+                    }
+                    trySend(comments)
+                }
+            }
+        awaitClose { subscription.remove() }
+    }
 
-    fun dismissReport(commentId: Int) = viewModelScope.launch {
-        commentDao.dismissReport(commentId)
+    fun dismissReport(commentId: String) = viewModelScope.launch {
+        try {
+            firestore.collection("comments").document(commentId).update(
+                mapOf(
+                    "isReported" to false,
+                    "reportedBy" to null,
+                    "reportReason" to null
+                )
+            ).await()
+        } catch (e: Exception) {
+            // Handle error
+        }
     }
 
     fun warnUser(studentNumber: String) = viewModelScope.launch {
-        val student = departmentDao.getStudentByStudentNumber(studentNumber)
-        student?.let {
-            val newWarningCount = it.warningCount + 1
-            val updatedStudent = it.copy(
-                warningCount = newWarningCount,
-                adminMessage = "You have been warned. Total warnings: ${newWarningCount}. Please follow the community guidelines.",
-                status = if (newWarningCount >= 3) "Banned" else it.status
-            )
-            departmentDao.updateStudent(updatedStudent)
+        try {
+            val userQuery = firestore.collection("users")
+                .whereEqualTo("studentNumber", studentNumber)
+                .get()
+                .await()
+            
+            val userDoc = userQuery.documents.firstOrNull()
+            if (userDoc != null) {
+                val currentWarnings = userDoc.getLong("warningCount") ?: 0
+                val newWarnings = currentWarnings + 1
+                val updates = hashMapOf<String, Any>(
+                    "warningCount" to newWarnings,
+                    "adminMessage" to "You have been warned. Total warnings: $newWarnings. Please follow the community guidelines.",
+                    "status" to if (newWarnings >= 3) "Banned" else userDoc.getString("status") ?: "Regular"
+                )
+                userDoc.reference.update(updates).await()
+            }
+        } catch (e: Exception) {
+            // Handle error
         }
     }
 
     fun banUser(studentNumber: String) = viewModelScope.launch {
-        val student = departmentDao.getStudentByStudentNumber(studentNumber)
-        student?.let {
-            departmentDao.updateStudent(it.copy(
-                status = "Banned",
-                adminMessage = "Your account has been banned due to multiple violations or a severe violation of our community guidelines."
-            ))
+        try {
+            val userQuery = firestore.collection("users")
+                .whereEqualTo("studentNumber", studentNumber)
+                .get()
+                .await()
+            
+            val userDoc = userQuery.documents.firstOrNull()
+            if (userDoc != null) {
+                val updates = hashMapOf<String, Any>(
+                    "status" to "Banned",
+                    "adminMessage" to "Your account has been banned due to violations of our community guidelines."
+                )
+                userDoc.reference.update(updates).await()
+            }
+        } catch (e: Exception) {
+            // Handle error
         }
     }
 
     fun clearAdminMessage() = viewModelScope.launch {
         val studentNumber = sessionManager.fetchStudentNumber() ?: return@launch
-        val student = departmentDao.getStudentByStudentNumber(studentNumber)
-        student?.let {
-            departmentDao.updateStudent(it.copy(adminMessage = null))
+        try {
+            val userQuery = firestore.collection("users")
+                .whereEqualTo("studentNumber", studentNumber)
+                .get()
+                .await()
+            
+            userQuery.documents.firstOrNull()?.reference?.update("adminMessage", null)?.await()
+        } catch (e: Exception) {
+            // Handle error
         }
     }
 }

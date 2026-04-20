@@ -22,16 +22,16 @@ import androidx.room.PrimaryKey
 )
 data class Student(
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    val studentNumber: String,
-    val name: String,
-    val password: String,
-    val email: String,
-    val yearLevel: String,
-    val departmentName: String,
-    val status: String = "Regular",
-    val profileImageUrl: String? = null,
-    val role: String = "student",
-    val warningCount: Int = 0,
-    val adminMessage: String? = null
+    var id: Int = 0,
+    var studentNumber: String = "",
+    var name: String = "",
+    var password: String = "",
+    var email: String = "",
+    var yearLevel: String = "",
+    var departmentName: String = "",
+    var status: String = "Regular",
+    var profileImageUrl: String? = null,
+    var role: String = "student",
+    var warningCount: Int = 0,
+    var adminMessage: String? = null
 )

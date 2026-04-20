@@ -46,9 +46,9 @@ abstract class AppDatabase : RoomDatabase() {
     ) : RoomDatabase.Callback() {
         override fun onCreate(db: SupportSQLiteDatabase) {
             super.onCreate(db)
-            INSTANCE?.let {
+            INSTANCE?.let { database ->
                 CoroutineScope(Dispatchers.IO).launch {
-                    val departmentDao = getDatabase(context).departmentDao()
+                    val departmentDao = database.departmentDao()
                     CampusRepository(departmentDao).checkAndPopulate()
                 }
             }

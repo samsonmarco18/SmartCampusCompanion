@@ -12,7 +12,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -34,6 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.smartcampuscompanion.data.Announcement
 import com.example.smartcampuscompanion.data.Comment
+import com.example.smartcampuscompanion.data.Department
 import com.example.smartcampuscompanion.ui.announcements.AnnouncementsViewModel
 import com.example.smartcampuscompanion.ui.campus_info.CampusViewModel
 import com.example.smartcampuscompanion.util.ViewModelFactory
@@ -56,7 +56,7 @@ fun AnnouncementManagerScreen(
     val context = LocalContext.current
     val announcementsViewModel: AnnouncementsViewModel = viewModel(factory = ViewModelFactory(context.applicationContext as Application))
     val announcements by announcementManagerViewModel.announcements.collectAsState()
-    val departments by campusViewModel.departmentsWithStudents.collectAsState()
+    val departments by campusViewModel.departments.collectAsState()
     val reportedComments by announcementsViewModel.reportedComments.collectAsState(initial = emptyList())
     
     var showDialog by remember { mutableStateOf(false) }
@@ -119,7 +119,7 @@ fun AnnouncementManagerScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(announcements, key = { it.id }) { announcement ->
+                        items(announcements, key = { it.docId }) { announcement ->
                             AnnouncementItem(
                                 announcement = announcement,
                                 onDelete = { announcementManagerViewModel.delete(announcement) },
@@ -141,7 +141,7 @@ fun AnnouncementManagerScreen(
         if (showDialog) {
             AnnouncementDialog(
                 announcement = announcementToEdit,
-                departments = departments.map { it.department },
+                departments = departments,
                 onDismiss = { showDialog = false },
                 onSave = { announcementToSave ->
                     if (announcementToEdit == null) announcementManagerViewModel.insert(announcementToSave) else announcementManagerViewModel.update(announcementToSave)
@@ -155,7 +155,7 @@ fun AnnouncementManagerScreen(
 @Composable
 fun ReportedCommentsList(
     comments: List<Comment>,
-    onDismiss: (Int) -> Unit,
+    onDismiss: (String) -> Unit,
     onBan: (String) -> Unit,
     onWarn: (String) -> Unit
 ) {
@@ -169,7 +169,7 @@ fun ReportedCommentsList(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(comments) { comment ->
+            items(comments, key = { it.docId }) { comment ->
                 ReportedCommentItem(comment, onDismiss, onBan, onWarn)
             }
         }
@@ -179,7 +179,7 @@ fun ReportedCommentsList(
 @Composable
 fun ReportedCommentItem(
     comment: Comment,
-    onDismiss: (Int) -> Unit,
+    onDismiss: (String) -> Unit,
     onBan: (String) -> Unit,
     onWarn: (String) -> Unit
 ) {
@@ -229,7 +229,7 @@ fun ReportedCommentItem(
             Spacer(modifier = Modifier.height(16.dp))
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = { onDismiss(comment.id) }) {
+                TextButton(onClick = { onDismiss(comment.docId) }) {
                     Text("Dismiss")
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -303,8 +303,8 @@ fun AnnouncementItem(announcement: Announcement, onDelete: () -> Unit, onEdit: (
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ChipView(text = announcement.category)
-                        if (announcement.departmentName != null) {
-                            ChipView(text = announcement.departmentName)
+                        announcement.departmentName?.let {
+                            ChipView(text = it)
                         }
                     }
                     Text(text = announcement.content, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
@@ -341,7 +341,7 @@ fun ChipView(text: String) {
 @Composable
 fun AnnouncementDialog(
     announcement: Announcement?,
-    departments: List<com.example.smartcampuscompanion.data.Department>,
+    departments: List<Department>,
     onDismiss: () -> Unit,
     onSave: (Announcement) -> Unit
 ) {
@@ -351,7 +351,7 @@ fun AnnouncementDialog(
     var expandedDepartment by remember { mutableStateOf(false) }
     var selectedDepartment by remember { mutableStateOf(announcement?.departmentName) }
     var expandedCategory by remember { mutableStateOf(false) }
-    var selectedCategory by remember { mutableStateOf(announcement?.category) }
+    var selectedCategory by remember { mutableStateOf(announcement?.category ?: "Event") }
     val categories = listOf("Event", "Activity", "Urgent", "Seminar")
 
     val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -424,7 +424,7 @@ fun AnnouncementDialog(
                 item {
                     Box(modifier = Modifier.fillMaxWidth()) {
                         OutlinedButton(onClick = { expandedCategory = true }, modifier = Modifier.fillMaxWidth()) {
-                            Text(selectedCategory ?: "Select Category")
+                            Text(selectedCategory)
                             Spacer(Modifier.weight(1f))
                             Icon(Icons.Default.ArrowDropDown, contentDescription = null)
                         }
@@ -451,12 +451,11 @@ fun AnnouncementDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = {
-                                if (selectedCategory != null) {
-                                    val announcementToSave = announcement?.copy(
-                                        title = title, content = content, dueDate = finalDateTime.timeInMillis, departmentName = selectedDepartment, category = selectedCategory!!, imageUrl = imageUrl
-                                    ) ?: Announcement(title = title, content = content, dueDate = finalDateTime.timeInMillis, departmentName = selectedDepartment, category = selectedCategory!!, imageUrl = imageUrl)
-                                    onSave(announcementToSave)
-                                }
+                                val category = selectedCategory
+                                val announcementToSave = announcement?.copy(
+                                    title = title, content = content, dueDate = finalDateTime.timeInMillis, departmentName = selectedDepartment, category = category, imageUrl = imageUrl
+                                ) ?: Announcement(title = title, content = content, dueDate = finalDateTime.timeInMillis, departmentName = selectedDepartment, category = category, imageUrl = imageUrl)
+                                onSave(announcementToSave)
                             }
                         ) { Text("Save") }
                     }

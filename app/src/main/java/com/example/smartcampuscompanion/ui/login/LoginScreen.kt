@@ -30,7 +30,7 @@ import com.example.smartcampuscompanion.util.ViewModelFactory
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignUp: () -> Unit) {
-    var username by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -110,19 +110,19 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignUp: () -> Unit) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     OutlinedTextField(
-                        value = username,
-                        onValueChange = { username = it },
-                        label = { Text("Username") },
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Filled.Person,
-                                contentDescription = "Username Icon",
+                                imageVector = Icons.Filled.Email,
+                                contentDescription = "Email Icon",
                                 tint = BeigePrimary
                             )
                         },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
+                            keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Next
                         ),
                         keyboardActions = KeyboardActions(
@@ -157,7 +157,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignUp: () -> Unit) {
                         keyboardActions = KeyboardActions(
                             onDone = {
                                 focusManager.clearFocus()
-                                loginViewModel.login(username, password)
+                                loginViewModel.login(email, password)
                             }
                         ),
                         trailingIcon = {
@@ -194,7 +194,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignUp: () -> Unit) {
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Button(
-                        onClick = { loginViewModel.login(username, password) },
+                        onClick = { loginViewModel.login(email, password) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),

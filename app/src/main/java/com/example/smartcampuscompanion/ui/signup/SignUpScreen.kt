@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.School
@@ -23,7 +24,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -64,6 +64,7 @@ import com.example.smartcampuscompanion.util.ViewModelFactory
 fun SignUpScreen(onSignUpSuccess: () -> Unit, onNavigateToLogin: () -> Unit) {
     var studentNumber by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     val context = LocalContext.current
@@ -213,6 +214,20 @@ fun SignUpScreen(onSignUpSuccess: () -> Unit, onNavigateToLogin: () -> Unit) {
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Email") },
+                            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = BeigePrimary) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = BeigePrimary,
+                                focusedLabelColor = BeigePrimary
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
                             label = { Text("Password") },
@@ -234,7 +249,7 @@ fun SignUpScreen(onSignUpSuccess: () -> Unit, onNavigateToLogin: () -> Unit) {
                             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = BeigePrimary) },
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(onDone = { signUpViewModel.signUp(studentNumber, username, password, confirmPassword, selectedDepartment, selectedYearLevel) }),
+                            keyboardActions = KeyboardActions(onDone = { signUpViewModel.signUp(studentNumber, username, email, password, confirmPassword, selectedDepartment, selectedYearLevel) }),
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = BeigePrimary,
@@ -325,7 +340,7 @@ fun SignUpScreen(onSignUpSuccess: () -> Unit, onNavigateToLogin: () -> Unit) {
                         Spacer(modifier = Modifier.height(24.dp))
                         
                         Button(
-                            onClick = { signUpViewModel.signUp(studentNumber, username, password, confirmPassword, selectedDepartment, selectedYearLevel) },
+                            onClick = { signUpViewModel.signUp(studentNumber, username, email, password, confirmPassword, selectedDepartment, selectedYearLevel) },
                             enabled = signUpState !is SignUpState.Loading,
                             modifier = Modifier.fillMaxWidth().height(50.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = BeigePrimary),

@@ -2,15 +2,23 @@ package com.example.smartcampuscompanion.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.smartcampuscompanion.data.Student
 import com.example.smartcampuscompanion.data.CampusRepository
+import com.example.smartcampuscompanion.data.Student
 import com.example.smartcampuscompanion.util.SessionManager
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.security.MessageDigest
+import kotlinx.coroutines.tasks.await
 
-class ProfileViewModel(private val campusRepository: CampusRepository, private val sessionManager: SessionManager) : ViewModel() {
+class ProfileViewModel(
+    private val campusRepository: CampusRepository,
+    private val sessionManager: SessionManager
+) : ViewModel() {
+
+    private val auth = FirebaseAuth.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
 
     private val _uiState = MutableStateFlow<ProfileState>(ProfileState.Loading)
     val uiState: StateFlow<ProfileState> = _uiState
@@ -20,55 +28,77 @@ class ProfileViewModel(private val campusRepository: CampusRepository, private v
     }
 
     private fun loadUserProfile() {
-        viewModelScope.launch {
-            val username = sessionManager.fetchUsername()
-            if (username != null) {
-                val student = campusRepository.getStudentByName(username)
-                if (student != null) {
-                    _uiState.value = ProfileState.Success(student)
-                } else {
-                    _uiState.value = ProfileState.Error("User not found")
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            viewModelScope.launch {
+                try {
+                    val userDoc = firestore.collection("users").document(currentUser.uid).get().await()
+                    if (userDoc.exists()) {
+                        val student = userDoc.toObject(Student::class.java)
+                        if (student != null) {
+                            _uiState.value = ProfileState.Success(student)
+                        } else {
+                            _uiState.value = ProfileState.Error("Failed to parse user data")
+                        }
+                    } else {
+                        _uiState.value = ProfileState.Error("User record not found in database")
+                    }
+                } catch (e: Exception) {
+                    _uiState.value = ProfileState.Error(e.localizedMessage ?: "Failed to load profile")
                 }
-            } else {
-                _uiState.value = ProfileState.Error("User not logged in")
             }
+        } else {
+            _uiState.value = ProfileState.Error("User not logged in")
         }
     }
 
     fun updateUserProfileImage(imageUrl: String) {
+        val currentUser = auth.currentUser ?: return
         viewModelScope.launch {
-            val username = sessionManager.fetchUsername() ?: return@launch
-            val student = campusRepository.getStudentByName(username) ?: return@launch
-            val updatedStudent = student.copy(profileImageUrl = imageUrl)
-            campusRepository.addStudent(updatedStudent)
-            _uiState.value = ProfileState.Success(updatedStudent)
+            try {
+                firestore.collection("users").document(currentUser.uid)
+                    .update("profileImageUrl", imageUrl).await()
+                // Refresh local state
+                loadUserProfile()
+            } catch (e: Exception) {
+                // Handle error
+            }
         }
     }
 
-    fun updateUser(username: String, newUsername: String, newPassword: String) {
+    fun updateUser(newUsername: String, newPassword: String? = null) {
+        val currentUser = auth.currentUser ?: return
         viewModelScope.launch {
-            val student = campusRepository.getStudentByName(username)
-            if (student != null) {
-                val passwordHash = if (newPassword.isNotBlank()) {
-                    MessageDigest.getInstance("SHA-256")
-                        .digest(newPassword.toByteArray())
-                        .fold("") { str, it -> str + "%02x".format(it) }
-                } else {
-                    student.password
+            try {
+                // Update Firebase Auth password if provided
+                if (!newPassword.isNullOrBlank()) {
+                    currentUser.updatePassword(newPassword).await()
                 }
 
-                val updatedStudent = student.copy(
-                    name = newUsername,
-                    password = passwordHash
+                // Update Firestore record
+                val updates = mutableMapOf<String, Any>(
+                    "name" to newUsername
                 )
-                if (username != newUsername) {
-                    campusRepository.dropStudent(student)
+                if (!newPassword.isNullOrBlank()) {
+                    updates["password"] = newPassword
                 }
-                campusRepository.addStudent(updatedStudent)
+
+                firestore.collection("users").document(currentUser.uid).update(updates).await()
+                
+                // Update session manager
                 sessionManager.saveUsername(newUsername)
-                _uiState.value = ProfileState.Success(updatedStudent)
+                
+                // Refresh local state
+                loadUserProfile()
+            } catch (e: Exception) {
+                _uiState.value = ProfileState.Error(e.localizedMessage ?: "Update failed")
             }
         }
+    }
+    
+    fun logout() {
+        auth.signOut()
+        sessionManager.clearSession()
     }
 }
 
