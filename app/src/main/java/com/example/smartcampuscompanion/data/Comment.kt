@@ -36,7 +36,12 @@ data class Comment(
     var timestamp: Long = System.currentTimeMillis(),
     var isReported: Boolean = false,
     var reportedBy: String? = null,
-    var reportReason: String? = null
+    var reportReason: String? = null,
+    
+    // Reply fields
+    var isReply: Boolean = false,
+    var replyToName: String? = null,
+    var replyToStudentNumber: String? = null
 ) {
     @get:Exclude
     @set:Exclude

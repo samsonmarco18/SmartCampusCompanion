@@ -38,7 +38,16 @@ class AnnouncementManagerViewModel(application: Application) : AndroidViewModel(
 
     fun insert(announcement: Announcement) = viewModelScope.launch {
         try {
-            firestore.collection("announcements").add(announcement).await()
+            // Add announcement to Firestore
+            val docRef = firestore.collection("announcements").add(announcement).await()
+            
+            // Note: Sending FCM notifications usually requires a server-side component (like Firebase Cloud Functions)
+            // because you shouldn't expose your FCM Server Key in the Android app for security reasons.
+            // For "everyone will be notified", the admin would send a message to the "announcements" topic.
+            
+            // To do this from the app for testing, you would normally call a Firebase Function or a backend API.
+            // Since we're in a local/mock environment, we'll assume the topic subscription in MainActivity 
+            // handles receiving when a tool sends to the "announcements" topic.
         } catch (e: Exception) {
             // Handle error
         }

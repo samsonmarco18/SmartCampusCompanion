@@ -67,7 +67,11 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
     implementation(libs.kotlinx.coroutines.play.services)
+    
+    // Google Sign-In
+    implementation(libs.play.services.auth)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

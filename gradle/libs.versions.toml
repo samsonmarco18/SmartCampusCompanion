@@ -14,6 +14,7 @@ googleServices = "4.4.2"
 firebaseBom = "33.5.1"
 coroutinesPlayServices = "1.9.0"
 room = "2.6.1"
+playServicesAuth = "21.2.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -36,10 +37,12 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutinesPlayServices" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

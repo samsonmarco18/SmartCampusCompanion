@@ -12,6 +12,7 @@ class SessionManager(context: Context) {
         const val STUDENT_NUMBER = "student_number"
         const val ROLE = "role"
         const val DARK_MODE = "dark_mode"
+        const val NOTIFICATIONS_ENABLED = "notifications_enabled"
     }
 
     fun saveSession(username: String, studentNumber: String, role: String) {
@@ -56,5 +57,15 @@ class SessionManager(context: Context) {
 
     fun isDarkMode(): Boolean {
         return prefs.getBoolean(DARK_MODE, false)
+    }
+
+    fun setNotificationsEnabled(enabled: Boolean) {
+        prefs.edit {
+            putBoolean(NOTIFICATIONS_ENABLED, enabled)
+        }
+    }
+
+    fun areNotificationsEnabled(): Boolean {
+        return prefs.getBoolean(NOTIFICATIONS_ENABLED, true)
     }
 }

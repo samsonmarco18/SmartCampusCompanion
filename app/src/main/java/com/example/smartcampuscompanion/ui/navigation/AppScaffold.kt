@@ -1,21 +1,22 @@
 package com.example.smartcampuscompanion.ui.navigation
 
+import android.app.Application
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.smartcampuscompanion.ui.announcements.AnnouncementsViewModel
 import com.example.smartcampuscompanion.util.SessionManager
+import com.example.smartcampuscompanion.util.ViewModelFactory
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,6 +29,9 @@ fun AppScaffold(
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
     val role = sessionManager.fetchRole() ?: "student"
+    
+    val announcementsViewModel: AnnouncementsViewModel = viewModel(factory = ViewModelFactory(context.applicationContext as Application))
+    val unreadCount by announcementsViewModel.unreadAnnouncementsCount.collectAsState()
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -62,7 +66,17 @@ fun AppScaffold(
                 Spacer(Modifier.height(12.dp))
                 navigationItems.forEach { screen ->
                     NavigationDrawerItem(
-                        label = { Text(screen.route.replaceFirstChar { it.uppercase() }) },
+                        label = { 
+                            BadgedBox(
+                                badge = {
+                                    if (screen == Screen.Announcements && unreadCount > 0) {
+                                        Badge { Text(unreadCount.toString()) }
+                                    }
+                                }
+                            ) {
+                                Text(screen.route.replaceFirstChar { it.uppercase() })
+                            }
+                        },
                         selected = currentRoute == screen.route,
                         onClick = {
                             scope.launch { drawerState.close() }

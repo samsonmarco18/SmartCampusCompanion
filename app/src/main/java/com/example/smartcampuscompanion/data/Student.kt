@@ -16,13 +16,11 @@ import androidx.room.PrimaryKey
         )
     ],
     indices = [
-        Index(value = ["departmentName"]),
-        Index(value = ["studentNumber"], unique = true)
+        Index(value = ["departmentName"])
     ]
 )
 data class Student(
-    @PrimaryKey(autoGenerate = true)
-    var id: Int = 0,
+    @PrimaryKey
     var studentNumber: String = "",
     var name: String = "",
     var password: String = "",
@@ -33,5 +31,6 @@ data class Student(
     var profileImageUrl: String? = null,
     var role: String = "student",
     var warningCount: Int = 0,
-    var adminMessage: String? = null
+    var adminMessage: String? = null,
+    var fcmToken: String? = null
 )

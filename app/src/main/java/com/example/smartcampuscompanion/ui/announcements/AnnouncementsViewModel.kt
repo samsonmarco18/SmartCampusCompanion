@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.channels.awaitClose
@@ -23,11 +24,22 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
     private val _announcements = MutableStateFlow<List<Announcement>>(emptyList())
     val announcements: StateFlow<List<Announcement>> = _announcements
 
-    private val _unreadCount = MutableStateFlow(0)
-    val unreadAnnouncementsCount: StateFlow<Int> = _unreadCount
+    private val _readIds = MutableStateFlow<Set<String>>(emptySet())
+    val readIds: StateFlow<Set<String>> = _readIds
+
+    val unreadAnnouncementsCount: StateFlow<Int> = combine(_announcements, _readIds) { announcements, readIds ->
+        announcements.count { it.docId !in readIds }
+    }.let { flow ->
+        val stateFlow = MutableStateFlow(0)
+        viewModelScope.launch {
+            flow.collect { stateFlow.value = it }
+        }
+        stateFlow
+    }
 
     init {
         fetchAnnouncements()
+        observeReadStatus()
     }
 
     private fun fetchAnnouncements() {
@@ -46,26 +58,21 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
                     }
                     val filtered = list.filter { it.studentNumber == null || it.studentNumber == studentNumber }
                     _announcements.value = filtered
-                    updateUnreadCount(filtered)
                 }
             }
     }
 
-    private fun updateUnreadCount(announcements: List<Announcement>) {
+    private fun observeReadStatus() {
         val studentNumber = sessionManager.fetchStudentNumber() ?: return
-        viewModelScope.launch {
-            try {
-                val readStatusDocs = firestore.collection("announcement_read_status")
-                    .whereEqualTo("studentNumber", studentNumber)
-                    .get()
-                    .await()
-                
-                val readIds = readStatusDocs.documents.mapNotNull { it.getString("announcementDocId") }.toSet()
-                _unreadCount.value = announcements.count { it.docId !in readIds }
-            } catch (e: Exception) {
-                // Handle error
+        firestore.collection("announcement_read_status")
+            .whereEqualTo("studentNumber", studentNumber)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+                if (snapshot != null) {
+                    val ids = snapshot.documents.mapNotNull { it.getString("announcementDocId") }.toSet()
+                    _readIds.value = ids
+                }
             }
-        }
     }
 
     fun getComments(announcementDocId: String): Flow<List<Comment>> = callbackFlow {
@@ -86,7 +93,7 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
         awaitClose { subscription.remove() }
     }
 
-    fun addComment(announcementDocId: String, content: String) = viewModelScope.launch {
+    fun addComment(announcementDocId: String, content: String, replyTo: Comment? = null) = viewModelScope.launch {
         val studentNumber = sessionManager.fetchStudentNumber() ?: return@launch
         val studentName = sessionManager.fetchUsername() ?: "Unknown"
         
@@ -95,7 +102,10 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
             studentNumber = studentNumber,
             studentName = studentName,
             content = content,
-            timestamp = System.currentTimeMillis()
+            timestamp = System.currentTimeMillis(),
+            isReply = replyTo != null,
+            replyToName = replyTo?.studentName,
+            replyToStudentNumber = replyTo?.studentNumber
         )
         
         try {
@@ -105,6 +115,28 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    fun markAsRead(announcementDocId: String) = viewModelScope.launch {
+        val studentNumber = sessionManager.fetchStudentNumber() ?: return@launch
+        try {
+            val existing = firestore.collection("announcement_read_status")
+                .whereEqualTo("studentNumber", studentNumber)
+                .whereEqualTo("announcementDocId", announcementDocId)
+                .get()
+                .await()
+            
+            if (existing.isEmpty) {
+                val status = hashMapOf(
+                    "studentNumber" to studentNumber,
+                    "announcementDocId" to announcementDocId
+                )
+                firestore.collection("announcement_read_status").add(status).await()
+            }
+        } catch (e: Exception) {
+            // Handle error
+        }
+    }
+
+    // ... other methods omitted for brevity, keeping them as they were if they existed
     fun deleteComment(comment: Comment) = viewModelScope.launch {
         val currentStudentNumber = sessionManager.fetchStudentNumber()
         if (comment.studentNumber == currentStudentNumber && comment.docId.isNotEmpty()) {
@@ -143,30 +175,6 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    fun markAsRead(announcementDocId: String) = viewModelScope.launch {
-        val studentNumber = sessionManager.fetchStudentNumber() ?: return@launch
-        try {
-            // Check if already marked as read to avoid duplicates
-            val existing = firestore.collection("announcement_read_status")
-                .whereEqualTo("studentNumber", studentNumber)
-                .whereEqualTo("announcementDocId", announcementDocId)
-                .get()
-                .await()
-            
-            if (existing.isEmpty) {
-                val status = hashMapOf(
-                    "studentNumber" to studentNumber,
-                    "announcementDocId" to announcementDocId
-                )
-                firestore.collection("announcement_read_status").add(status).await()
-                updateUnreadCount(_announcements.value)
-            }
-        } catch (e: Exception) {
-            // Handle error
-        }
-    }
-
-    // Admin actions for reported comments
     val reportedComments: Flow<List<Comment>> = callbackFlow {
         val subscription = firestore.collection("comments")
             .whereEqualTo("isReported", true)

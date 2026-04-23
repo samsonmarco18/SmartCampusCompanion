@@ -10,6 +10,9 @@ interface DepartmentDao {
     @Query("SELECT * FROM departments")
     fun getDepartmentsWithStudents(): Flow<List<DepartmentWithStudents>>
 
+    @Query("SELECT * FROM departments")
+    suspend fun getAllDepartmentsSync(): List<Department>
+
     @Query("SELECT * FROM students WHERE name = :name LIMIT 1")
     suspend fun getStudentByName(name: String): Student?
 
