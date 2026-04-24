@@ -37,6 +37,9 @@ class ProfileViewModel(
                         val student = userDoc.toObject(Student::class.java)
                         if (student != null) {
                             _uiState.value = ProfileState.Success(student)
+                            // Keep session manager in sync
+                            sessionManager.saveProfileImageUrl(student.profileImageUrl)
+                            sessionManager.saveUsername(student.name)
                         } else {
                             _uiState.value = ProfileState.Error("Failed to parse user data")
                         }
@@ -58,6 +61,7 @@ class ProfileViewModel(
             try {
                 firestore.collection("users").document(currentUser.uid)
                     .update("profileImageUrl", imageUrl).await()
+                sessionManager.saveProfileImageUrl(imageUrl)
                 // Refresh local state
                 loadUserProfile()
             } catch (e: Exception) {

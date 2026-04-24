@@ -39,11 +39,12 @@ class LoginViewModel(application: Application, private val sessionManager: Sessi
                         val name = userDoc.getString("name") ?: ""
                         val studentNumber = userDoc.getString("studentNumber") ?: ""
                         val role = userDoc.getString("role") ?: "student"
+                        val profileImageUrl = userDoc.getString("profileImageUrl")
                         val adminMessage = userDoc.getString("adminMessage")
                         
                         updateFcmToken(user.uid)
                         
-                        sessionManager.saveSession(name, studentNumber, role)
+                        sessionManager.saveSession(name, studentNumber, role, profileImageUrl)
                         _loginState.value = LoginState.Success(adminMessage)
                     } else {
                         _loginState.value = LoginState.Error("User data not found")
@@ -79,11 +80,12 @@ class LoginViewModel(application: Application, private val sessionManager: Sessi
                         val name = userDoc.getString("name") ?: ""
                         val studentNumber = userDoc.getString("studentNumber") ?: ""
                         val role = userDoc.getString("role") ?: "student"
+                        val profileImageUrl = userDoc.getString("profileImageUrl")
                         val adminMessage = userDoc.getString("adminMessage")
                         
                         updateFcmToken(user.uid)
                         
-                        sessionManager.saveSession(name, studentNumber, role)
+                        sessionManager.saveSession(name, studentNumber, role, profileImageUrl)
                         _loginState.value = LoginState.Success(adminMessage)
                     } else {
                         // User exists in Auth but not in Firestore - redirect to complete profile

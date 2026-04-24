@@ -1,7 +1,6 @@
 package com.example.smartcampuscompanion.data
 
 import androidx.room.Entity
-import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import com.google.firebase.firestore.Exclude
 
@@ -13,5 +12,7 @@ data class Task(
     var title: String = "",
     var description: String = "",
     var dueDate: Long = 0,
-    @get:Exclude @set:Exclude @Ignore var docId: String = ""
+    var isSynced: Boolean = true,
+    var lastModified: Long = System.currentTimeMillis(),
+    @get:Exclude @set:Exclude var docId: String = ""
 )

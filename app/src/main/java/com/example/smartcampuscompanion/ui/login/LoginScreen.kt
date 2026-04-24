@@ -192,6 +192,7 @@ fun LoginScreen(
                                 focusManager.clearFocus()
                                 loginViewModel.login(email, password)
                             }
+
                         ),
                         trailingIcon = {
                             val image = if (passwordVisible)

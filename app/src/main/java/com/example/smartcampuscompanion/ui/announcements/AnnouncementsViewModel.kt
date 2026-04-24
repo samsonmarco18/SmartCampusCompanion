@@ -1,10 +1,17 @@
 package com.example.smartcampuscompanion.ui.announcements
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
+import android.util.Log
+import androidx.core.app.NotificationCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartcampuscompanion.data.*
 import com.example.smartcampuscompanion.util.SessionManager
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.flow.Flow
@@ -37,6 +44,8 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
         stateFlow
     }
 
+    private var isFirstFetch = true
+
     init {
         fetchAnnouncements()
         observeReadStatus()
@@ -48,7 +57,10 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
         firestore.collection("announcements")
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, e ->
-                if (e != null) return@addSnapshotListener
+                if (e != null) {
+                    Log.e("Firestore", "Error fetching announcements", e)
+                    return@addSnapshotListener
+                }
                 
                 if (snapshot != null) {
                     val list = snapshot.documents.mapNotNull { doc ->
@@ -57,9 +69,40 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
                         }
                     }
                     val filtered = list.filter { it.studentNumber == null || it.studentNumber == studentNumber }
+                    
+                    // Check for new announcements to trigger a local notification
+                    if (!isFirstFetch && filtered.isNotEmpty()) {
+                        val latestNew = filtered.first()
+                        val currentList = _announcements.value
+                        if (currentList.isNotEmpty() && latestNew.timestamp > currentList.first().timestamp) {
+                            showLocalNotification(latestNew)
+                        }
+                    }
+                    
                     _announcements.value = filtered
+                    isFirstFetch = false
                 }
             }
+    }
+
+    private fun showLocalNotification(announcement: Announcement) {
+        val context = getApplication<Application>().applicationContext
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = "campus_notifications_channel"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, "Campus Notifications", NotificationManager.IMPORTANCE_HIGH)
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val builder = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("New Announcement: ${announcement.title}")
+            .setContentText(announcement.content)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+
+        notificationManager.notify(announcement.timestamp.toInt(), builder.build())
     }
 
     private fun observeReadStatus() {
@@ -75,18 +118,41 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
             }
     }
 
+    fun toggleLike(announcementId: String) = viewModelScope.launch {
+        val studentNumber = sessionManager.fetchStudentNumber() ?: return@launch
+        val docRef = firestore.collection("announcements").document(announcementId)
+        
+        try {
+            val doc = docRef.get().await()
+            val likedBy = doc.get("likedBy") as? List<*> ?: emptyList<String>()
+            
+            if (likedBy.contains(studentNumber)) {
+                docRef.update("likedBy", FieldValue.arrayRemove(studentNumber)).await()
+            } else {
+                docRef.update("likedBy", FieldValue.arrayUnion(studentNumber)).await()
+            }
+        } catch (e: Exception) {
+            Log.e("Firestore", "Error toggling like", e)
+        }
+    }
+
     fun getComments(announcementDocId: String): Flow<List<Comment>> = callbackFlow {
+        // We remove orderBy from the query to avoid the need for a composite index in Firestore.
+        // This ensures the listener works immediately and stays real-time even without manual index creation.
         val subscription = firestore.collection("comments")
             .whereEqualTo("announcementDocId", announcementDocId)
-            .orderBy("timestamp", Query.Direction.ASCENDING)
             .addSnapshotListener { snapshot, e ->
-                if (e != null) return@addSnapshotListener
+                if (e != null) {
+                    Log.e("Firestore", "Error fetching comments for $announcementDocId", e)
+                    close(e)
+                    return@addSnapshotListener
+                }
                 if (snapshot != null) {
                     val comments = snapshot.documents.mapNotNull { doc ->
                         doc.toObject(Comment::class.java)?.apply {
                             docId = doc.id
                         }
-                    }
+                    }.sortedBy { it.timestamp } // Sort locally to maintain order
                     trySend(comments)
                 }
             }
@@ -96,14 +162,19 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
     fun addComment(announcementDocId: String, content: String, replyTo: Comment? = null) = viewModelScope.launch {
         val studentNumber = sessionManager.fetchStudentNumber() ?: return@launch
         val studentName = sessionManager.fetchUsername() ?: "Unknown"
+        val role = sessionManager.fetchRole() ?: "student"
+        val profileImageUrl = sessionManager.fetchProfileImageUrl()
         
         val comment = Comment(
             announcementDocId = announcementDocId,
             studentNumber = studentNumber,
             studentName = studentName,
+            profileImageUrl = profileImageUrl,
             content = content,
+            role = role,
             timestamp = System.currentTimeMillis(),
             isReply = replyTo != null,
+            parentCommentId = replyTo?.docId,
             replyToName = replyTo?.studentName,
             replyToStudentNumber = replyTo?.studentNumber
         )
@@ -111,7 +182,7 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
         try {
             firestore.collection("comments").add(comment).await()
         } catch (e: Exception) {
-            // Handle error
+            Log.e("Firestore", "Error adding comment", e)
         }
     }
 
@@ -132,18 +203,17 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
                 firestore.collection("announcement_read_status").add(status).await()
             }
         } catch (e: Exception) {
-            // Handle error
+            Log.e("Firestore", "Error marking as read", e)
         }
     }
 
-    // ... other methods omitted for brevity, keeping them as they were if they existed
     fun deleteComment(comment: Comment) = viewModelScope.launch {
         val currentStudentNumber = sessionManager.fetchStudentNumber()
         if (comment.studentNumber == currentStudentNumber && comment.docId.isNotEmpty()) {
             try {
                 firestore.collection("comments").document(comment.docId).delete().await()
             } catch (e: Exception) {
-                // Handle error
+                Log.e("Firestore", "Error deleting comment", e)
             }
         }
     }
@@ -155,7 +225,7 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
                 firestore.collection("comments").document(comment.docId)
                     .update("content", newContent).await()
             } catch (e: Exception) {
-                // Handle error
+                Log.e("Firestore", "Error updating comment", e)
             }
         }
     }
@@ -171,7 +241,7 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
                 )
             ).await()
         } catch (e: Exception) {
-            // Handle error
+            Log.e("Firestore", "Error reporting comment", e)
         }
     }
 
@@ -202,7 +272,7 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
                 )
             ).await()
         } catch (e: Exception) {
-            // Handle error
+            Log.e("Firestore", "Error dismissing report", e)
         }
     }
 
@@ -225,7 +295,7 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
                 userDoc.reference.update(updates).await()
             }
         } catch (e: Exception) {
-            // Handle error
+            Log.e("Firestore", "Error warning user", e)
         }
     }
 
@@ -245,7 +315,7 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
                 userDoc.reference.update(updates).await()
             }
         } catch (e: Exception) {
-            // Handle error
+            Log.e("Firestore", "Error banning user", e)
         }
     }
 
@@ -259,7 +329,7 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
             
             userQuery.documents.firstOrNull()?.reference?.update("adminMessage", null)?.await()
         } catch (e: Exception) {
-            // Handle error
+            Log.e("Firestore", "Error clearing admin message", e)
         }
     }
 }

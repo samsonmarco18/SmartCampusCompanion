@@ -32,7 +32,9 @@ data class Comment(
     var announcementDocId: String = "",
     var studentNumber: String = "",
     var studentName: String = "",
+    var profileImageUrl: String? = null,
     var content: String = "",
+    var role: String = "student",
     var timestamp: Long = System.currentTimeMillis(),
     var isReported: Boolean = false,
     var reportedBy: String? = null,
@@ -40,6 +42,7 @@ data class Comment(
     
     // Reply fields
     var isReply: Boolean = false,
+    var parentCommentId: String? = null, // ID of the comment being replied to
     var replyToName: String? = null,
     var replyToStudentNumber: String? = null
 ) {

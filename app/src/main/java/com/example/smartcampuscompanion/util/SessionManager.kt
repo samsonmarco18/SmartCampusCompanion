@@ -11,21 +11,29 @@ class SessionManager(context: Context) {
         const val USERNAME = "username"
         const val STUDENT_NUMBER = "student_number"
         const val ROLE = "role"
+        const val PROFILE_IMAGE_URL = "profile_image_url"
         const val DARK_MODE = "dark_mode"
         const val NOTIFICATIONS_ENABLED = "notifications_enabled"
     }
 
-    fun saveSession(username: String, studentNumber: String, role: String) {
+    fun saveSession(username: String, studentNumber: String, role: String, profileImageUrl: String? = null) {
         prefs.edit {
             putString(USERNAME, username)
             putString(STUDENT_NUMBER, studentNumber)
             putString(ROLE, role)
+            putString(PROFILE_IMAGE_URL, profileImageUrl)
         }
     }
 
     fun saveUsername(username: String) {
         prefs.edit {
             putString(USERNAME, username)
+        }
+    }
+
+    fun saveProfileImageUrl(url: String?) {
+        prefs.edit {
+            putString(PROFILE_IMAGE_URL, url)
         }
     }
 
@@ -41,11 +49,16 @@ class SessionManager(context: Context) {
         return prefs.getString(ROLE, null)
     }
 
+    fun fetchProfileImageUrl(): String? {
+        return prefs.getString(PROFILE_IMAGE_URL, null)
+    }
+
     fun clearSession() {
         prefs.edit {
             remove(USERNAME)
             remove(STUDENT_NUMBER)
             remove(ROLE)
+            remove(PROFILE_IMAGE_URL)
         }
     }
 

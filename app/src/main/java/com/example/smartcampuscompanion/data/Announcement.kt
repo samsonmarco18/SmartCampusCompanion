@@ -16,7 +16,8 @@ data class Announcement(
     var dueDate: Long = 0,
     var studentNumber: String? = null,
     var imageUrl: String? = null,
-    var timestamp: Long = System.currentTimeMillis()
+    var timestamp: Long = System.currentTimeMillis(),
+    var likedBy: List<String> = emptyList() // List of student numbers who liked
 ) {
     @get:Exclude
     @set:Exclude

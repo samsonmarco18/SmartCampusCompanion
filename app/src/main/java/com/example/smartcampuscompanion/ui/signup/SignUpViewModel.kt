@@ -72,13 +72,14 @@ class SignUpViewModel(application: Application, private val sessionManager: Sess
                         "departmentName" to department,
                         "role" to "student",
                         "status" to "Regular",
-                        "fcmToken" to fcmToken
+                        "fcmToken" to fcmToken,
+                        "profileImageUrl" to null
                     )
 
                     firestore.collection("users").document(user.uid).set(userData).await()
                     
                     // Save session data locally
-                    sessionManager.saveSession(username, studentNumber, "student")
+                    sessionManager.saveSession(username, studentNumber, "student", null)
                     
                     _signUpState.value = SignUpState.Success
                 } else {
@@ -133,13 +134,14 @@ class SignUpViewModel(application: Application, private val sessionManager: Sess
                         "departmentName" to department,
                         "role" to "student",
                         "status" to "Regular",
-                        "fcmToken" to fcmToken
+                        "fcmToken" to fcmToken,
+                        "profileImageUrl" to user.photoUrl?.toString()
                     )
 
                     firestore.collection("users").document(user.uid).set(userData).await()
                     
                     // Save session data locally
-                    sessionManager.saveSession(username, studentNumber, "student")
+                    sessionManager.saveSession(username, studentNumber, "student", user.photoUrl?.toString())
 
                     _signUpState.value = SignUpState.Success
                 } else {
