@@ -1,6 +1,7 @@
 package com.example.smartcampuscompanion.ui.login
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smartcampuscompanion.util.SessionManager
@@ -68,6 +69,17 @@ class LoginViewModel(application: Application, private val sessionManager: Sessi
         }
     }
 
+    fun clearAdminMessage() {
+        val userId = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            try {
+                firestore.collection("users").document(userId).update("adminMessage", null).await()
+            } catch (e: Exception) {
+                Log.e("LoginViewModel", "Error clearing admin message", e)
+            }
+        }
+    }
+
     fun signInWithGoogle(credential: AuthCredential) {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading
@@ -88,7 +100,6 @@ class LoginViewModel(application: Application, private val sessionManager: Sessi
                         sessionManager.saveSession(name, studentNumber, role, profileImageUrl)
                         _loginState.value = LoginState.Success(adminMessage)
                     } else {
-                        // User exists in Auth but not in Firestore - redirect to complete profile
                         _loginState.value = LoginState.GoogleFirstTime(user.email ?: "", user.displayName ?: "")
                     }
                 }

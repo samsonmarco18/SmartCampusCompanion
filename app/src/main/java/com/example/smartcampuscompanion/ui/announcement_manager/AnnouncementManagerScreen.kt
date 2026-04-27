@@ -3,6 +3,7 @@ package com.example.smartcampuscompanion.ui.announcement_manager
 import android.app.Application
 import android.net.Uri
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -131,9 +132,18 @@ fun AnnouncementManagerScreen(
             } else {
                 ReportedCommentsList(
                     comments = reportedComments,
-                    onDismiss = { announcementsViewModel.dismissReport(it) },
-                    onBan = { announcementsViewModel.banUser(it) },
-                    onWarn = { announcementsViewModel.warnUser(it) }
+                    onDismiss = { 
+                        announcementsViewModel.dismissReport(it)
+                        Toast.makeText(context, "Report dismissed successfully", Toast.LENGTH_SHORT).show()
+                    },
+                    onBan = { 
+                        announcementsViewModel.banUser(it)
+                        Toast.makeText(context, "User banned successfully", Toast.LENGTH_SHORT).show()
+                    },
+                    onWarn = { 
+                        announcementsViewModel.warnUser(it)
+                        Toast.makeText(context, "User warned successfully", Toast.LENGTH_SHORT).show()
+                    }
                 )
             }
         }

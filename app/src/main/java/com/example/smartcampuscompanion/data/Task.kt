@@ -11,6 +11,7 @@ data class Task(
     var studentNumber: String = "",
     var title: String = "",
     var description: String = "",
+    var startDate: Long = 0,
     var dueDate: Long = 0,
     var isSynced: Boolean = true,
     var lastModified: Long = System.currentTimeMillis(),

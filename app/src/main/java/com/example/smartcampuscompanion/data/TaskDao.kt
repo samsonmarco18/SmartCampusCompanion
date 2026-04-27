@@ -12,7 +12,7 @@ interface TaskDao {
     suspend fun getUnsyncedTasks(studentNumber: String): List<Task>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(task: Task)
+    suspend fun insert(task: Task): Long
 
     @Update
     suspend fun update(task: Task)
