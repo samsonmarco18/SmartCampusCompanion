@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -73,7 +74,7 @@ fun AnnouncementsScreen(
                 modifier = Modifier
                     .padding(padding)
                     .fillMaxSize()
-                    .background(Color(0xFFF0F2F5)),
+                    .background(MaterialTheme.colorScheme.background),
                 contentPadding = PaddingValues(vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -105,18 +106,19 @@ fun AnnouncementsScreen(
 
 @Composable
 fun CategoryTag(category: String) {
+    val isDark = isSystemInDarkTheme()
     val backgroundColor = when (category.lowercase()) {
-        "urgent" -> Color(0xFFFFEBEE)
-        "event" -> Color(0xFFE3F2FD)
-        "activity" -> Color(0xFFE8F5E9)
-        "seminar" -> Color(0xFFFFF3E0)
+        "urgent" -> if (isDark) Color(0xFF422222) else Color(0xFFFFEBEE)
+        "event" -> if (isDark) Color(0xFF1E2F3D) else Color(0xFFE3F2FD)
+        "activity" -> if (isDark) Color(0xFF1D3220) else Color(0xFFE8F5E9)
+        "seminar" -> if (isDark) Color(0xFF3D2E1E) else Color(0xFFFFF3E0)
         else -> MaterialTheme.colorScheme.surfaceVariant
     }
     val textColor = when (category.lowercase()) {
-        "urgent" -> Color(0xFFD32F2F)
-        "event" -> Color(0xFF1976D2)
-        "activity" -> Color(0xFF388E3C)
-        "seminar" -> Color(0xFFF57C00)
+        "urgent" -> if (isDark) Color(0xFFFF8A80) else Color(0xFFD32F2F)
+        "event" -> if (isDark) Color(0xFF82B1FF) else Color(0xFF1976D2)
+        "activity" -> if (isDark) Color(0xFFB9F6CA) else Color(0xFF388E3C)
+        "seminar" -> if (isDark) Color(0xFFFFD180) else Color(0xFFF57C00)
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
@@ -366,8 +368,8 @@ fun AnnouncementDetailView(
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(24.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = Color(0xFFF0F2F5),
-                                unfocusedContainerColor = Color(0xFFF0F2F5),
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                 focusedBorderColor = Color.Transparent,
                                 unfocusedBorderColor = Color.Transparent
                             ),
@@ -449,7 +451,7 @@ fun AnnouncementDetailView(
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
+                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 
                 // Interaction Stats
                 Row(
@@ -469,7 +471,7 @@ fun AnnouncementDetailView(
                     Text("${comments.size} comments", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
                 }
                 
-                HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
+                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 
                 // Interaction Bar
                 Row(
@@ -489,7 +491,7 @@ fun AnnouncementDetailView(
                     )
                 }
 
-                HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
+                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
@@ -555,8 +557,13 @@ fun CommentItem(
     var reportReason by remember { mutableStateOf("") }
     
     val isAdmin = comment.role == "admin"
-    val bubbleColor = if (isAdmin) Color(0xFFE3F2FD) else Color(0xFFF0F2F5)
-    val nameColor = if (isAdmin) MaterialTheme.colorScheme.primary else Color.Unspecified
+    val isDark = isSystemInDarkTheme()
+    val bubbleColor = if (isAdmin) {
+        if (isDark) Color(0xFF1E2F3D) else Color(0xFFE3F2FD)
+    } else {
+        if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF0F2F5)
+    }
+    val nameColor = if (isAdmin) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
 
     Row(
         modifier = Modifier

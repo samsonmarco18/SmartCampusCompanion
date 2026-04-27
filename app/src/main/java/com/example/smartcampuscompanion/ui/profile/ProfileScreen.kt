@@ -46,24 +46,26 @@ fun ProfileScreen(onNavigateUp: () -> Unit = {}) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Profile", color = Color.White) },
+                title = { Text("Profile") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BeigePrimary
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },
-        containerColor = BeigeBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             when (val state = uiState) {
                 is ProfileState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = BeigePrimary)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
                 is ProfileState.Success -> {
@@ -130,8 +132,8 @@ fun ProfileContent(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp),
-                containerColor = BeigePrimary,
-                contentColor = Color.White
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(Icons.Default.Edit, contentDescription = "Edit Profile")
             }
@@ -147,7 +149,7 @@ fun UserProfileView(student: Student, onImageClick: () -> Unit) {
                 .size(120.dp)
                 .clickable { onImageClick() },
             shape = CircleShape,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.surface,
             shadowElevation = 4.dp
         ) {
             if (student.profileImageUrl != null) {
@@ -162,7 +164,7 @@ fun UserProfileView(student: Student, onImageClick: () -> Unit) {
                     Icons.Default.AccountCircle,
                     contentDescription = "User Avatar",
                     modifier = Modifier.fillMaxSize(),
-                    tint = BeigePrimary.copy(alpha = 0.6f)
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                 )
             }
             
@@ -171,11 +173,11 @@ fun UserProfileView(student: Student, onImageClick: () -> Unit) {
                 contentAlignment = Alignment.BottomEnd
             ) {
                 Surface(
-                    color = BeigePrimary,
+                    color = MaterialTheme.colorScheme.primary,
                     shape = CircleShape,
                     modifier = Modifier.size(32.dp).padding(4.dp)
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = null, tint = Color.White, modifier = Modifier.padding(4.dp))
+                    Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(4.dp))
                 }
             }
         }
@@ -184,12 +186,12 @@ fun UserProfileView(student: Student, onImageClick: () -> Unit) {
             text = student.name,
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            color = BeigeSecondary
+            color = MaterialTheme.colorScheme.secondary
         )
         Text(
             text = if (student.role == "admin") "Administrator Account" else "Student Account",
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
         Spacer(modifier = Modifier.height(32.dp))
@@ -209,7 +211,7 @@ fun SectionHeader(name: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        color = BeigePrimary.copy(alpha = 0.1f),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
         shape = RoundedCornerShape(4.dp)
     ) {
         Row(
@@ -220,14 +222,14 @@ fun SectionHeader(name: String) {
             Box(
                 modifier = Modifier
                     .size(4.dp, 16.dp)
-                    .background(BeigePrimary, RoundedCornerShape(2.dp))
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp))
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = name,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = BeigePrimary,
+                color = MaterialTheme.colorScheme.primary,
                 letterSpacing = 0.5.sp
             )
         }
@@ -246,11 +248,11 @@ fun EditProfileView(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Edit Profile", style = MaterialTheme.typography.headlineSmall, color = BeigeSecondary, fontWeight = FontWeight.Bold)
+            Text("Edit Profile", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(24.dp))
             OutlinedTextField(
                 value = username,
@@ -274,7 +276,7 @@ fun EditProfileView(
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
                     onClick = onSave,
-                    colors = ButtonDefaults.buttonColors(containerColor = BeigePrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Save")
                 }
@@ -291,7 +293,7 @@ fun ProfileInfoRow(icon: ImageVector, label: String, value: String) {
             .padding(vertical = 4.dp),
         shape = RoundedCornerShape(4.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -302,16 +304,16 @@ fun ProfileInfoRow(icon: ImageVector, label: String, value: String) {
             Surface(
                 modifier = Modifier.size(40.dp),
                 shape = CircleShape,
-                color = BeigeBackground
+                color = MaterialTheme.colorScheme.background
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = BeigePrimary)
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(text = label, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                Text(text = value, style = MaterialTheme.typography.titleMedium, color = Color.DarkGray, fontWeight = FontWeight.Bold)
+                Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(text = value, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
             }
         }
     }
