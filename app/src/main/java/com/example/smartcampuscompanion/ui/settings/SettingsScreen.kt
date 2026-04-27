@@ -1,5 +1,8 @@
 package com.example.smartcampuscompanion.ui.settings
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -31,7 +34,8 @@ fun SettingsScreen(
     isDarkMode: Boolean,
     onToggleDarkMode: (Boolean) -> Unit,
     onNavigateUp: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToEditProfile: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
@@ -51,7 +55,9 @@ fun SettingsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO: Search settings */ }) {
+                    IconButton(onClick = { 
+                        Toast.makeText(context, "Search feature coming soon", Toast.LENGTH_SHORT).show()
+                    }) {
                         Icon(Icons.Default.Search, contentDescription = "Search Settings")
                     }
                 },
@@ -72,7 +78,8 @@ fun SettingsScreen(
             item {
                 UserProfileCard(
                     name = sessionManager.fetchUsername() ?: "User",
-                    subtitle = "Student ID: ${sessionManager.fetchStudentNumber() ?: "N/A"}"
+                    subtitle = "Student ID: ${sessionManager.fetchStudentNumber() ?: "N/A"}",
+                    onEditClick = onNavigateToEditProfile
                 )
             }
 
@@ -88,8 +95,10 @@ fun SettingsScreen(
                             sessionManager.setNotificationsEnabled(enabled)
                             if (enabled) {
                                 FirebaseMessaging.getInstance().subscribeToTopic("announcements")
+                                Toast.makeText(context, "Notifications enabled", Toast.LENGTH_SHORT).show()
                             } else {
                                 FirebaseMessaging.getInstance().unsubscribeFromTopic("announcements")
+                                Toast.makeText(context, "Notifications disabled", Toast.LENGTH_SHORT).show()
                             }
                         }
                     )
@@ -104,7 +113,9 @@ fun SettingsScreen(
                         title = "Language",
                         subtitle = "English (US)",
                         icon = Icons.Default.Language,
-                        onClick = { /* Navigate to language settings */ }
+                        onClick = { 
+                            Toast.makeText(context, "Currently only English is supported", Toast.LENGTH_SHORT).show()
+                        }
                     )
                 }
             }
@@ -115,19 +126,23 @@ fun SettingsScreen(
                         title = "Edit Profile",
                         subtitle = "Personal info and photo",
                         icon = Icons.Default.Person,
-                        onClick = { /* Navigate to edit profile */ }
+                        onClick = onNavigateToEditProfile
                     )
                     SettingsClickableItem(
                         title = "Security",
                         subtitle = "Password and biometric lock",
                         icon = Icons.Default.Lock,
-                        onClick = { /* Navigate to privacy */ }
+                        onClick = { 
+                            Toast.makeText(context, "Security settings coming soon", Toast.LENGTH_SHORT).show()
+                        }
                     )
                     SettingsClickableItem(
                         title = "Storage",
                         subtitle = "Manage offline data",
                         icon = Icons.Default.Storage,
-                        onClick = { /* Navigate to storage */ }
+                        onClick = { 
+                            Toast.makeText(context, "Storage management coming soon", Toast.LENGTH_SHORT).show()
+                        }
                     )
                 }
             }
@@ -138,19 +153,34 @@ fun SettingsScreen(
                         title = "Help Center",
                         subtitle = "FAQs and support contact",
                         icon = Icons.AutoMirrored.Filled.HelpOutline,
-                        onClick = { /* Navigate to help */ }
+                        onClick = { 
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/")) // Halimbawang support link
+                            context.startActivity(intent)
+                        }
                     )
                     SettingsClickableItem(
                         title = "Feedback",
                         subtitle = "Help us improve the app",
                         icon = Icons.Default.Feedback,
-                        onClick = { /* Navigate to feedback */ }
+                        onClick = { 
+                            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = Uri.parse("mailto:support@smartcampus.com")
+                                putExtra(Intent.EXTRA_SUBJECT, "App Feedback")
+                            }
+                            try {
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "No email app found", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     )
                     SettingsClickableItem(
                         title = "About",
                         subtitle = "v1.0.0 (Stable Build)",
                         icon = Icons.Default.Info,
-                        onClick = { /* Navigate to about */ }
+                        onClick = { 
+                            Toast.makeText(context, "Smart Campus Companion v1.0.0", Toast.LENGTH_LONG).show()
+                        }
                     )
                 }
             }
@@ -213,11 +243,12 @@ fun SettingsScreen(
 }
 
 @Composable
-fun UserProfileCard(name: String, subtitle: String) {
+fun UserProfileCard(name: String, subtitle: String, onEditClick: () -> Unit = {}) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(16.dp)
+            .clickable(onClick = onEditClick),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp
@@ -254,11 +285,11 @@ fun UserProfileCard(name: String, subtitle: String) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            IconButton(onClick = { /* Edit profile */ }) {
+            IconButton(onClick = onEditClick) {
                 Icon(
-                    Icons.Default.Edit,
+                    Icons.Default.ChevronRight,
                     contentDescription = "Edit Profile",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                     modifier = Modifier.size(20.dp)
                 )
             }

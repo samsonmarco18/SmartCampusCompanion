@@ -152,7 +152,8 @@ fun AppNavigation(
                 isDarkMode = isDarkMode,
                 onToggleDarkMode = onToggleDarkMode,
                 onNavigateUp = { navController.navigateUp() },
-                onLogout = onLogout
+                onLogout = onLogout,
+                onNavigateToEditProfile = { navController.navigate(Screen.Profile.route) }
             )
         }
         composable(Screen.StudentRecord.route) {
