@@ -1,20 +1,22 @@
 package com.example.smartcampuscompanion.ui.announcements
 
 import android.app.Application
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,247 +39,517 @@ import com.example.smartcampuscompanion.util.ViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnnouncementsScreen(
-    onNavigateUp: () -> Unit = {},
-    modifier: Modifier = Modifier
+    onNavigateUp: () -> Unit
 ) {
     val context = LocalContext.current
     val viewModel: AnnouncementsViewModel = viewModel(factory = ViewModelFactory(context.applicationContext as Application))
     val announcements by viewModel.announcements.collectAsState()
-    val sessionManager = remember { SessionManager(context) }
-    val currentStudentNumber = sessionManager.fetchStudentNumber() ?: ""
+    val readIds by viewModel.readIds.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val sessionManager = SessionManager(context)
+    val myStudentNumber = sessionManager.fetchStudentNumber() ?: ""
+    
+    var selectedAnnouncement by remember { mutableStateOf<Announcement?>(null) }
 
     Scaffold(
         topBar = {
-            @OptIn(ExperimentalMaterial3Api::class)
             TopAppBar(
-                title = { Text("Announcements") },
+                title = { Text("Announcements", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     ) { padding ->
-        if (announcements.isEmpty()) {
-            Box(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Default.Notifications,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.outline
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "No announcements yet",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.outline
-                    )
+        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+            if (isLoading && announcements.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
-            }
-        } else {
-            LazyColumn(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(announcements, key = { it.id }) { announcement ->
-                    AnnouncementCard(
-                        announcement = announcement,
-                        viewModel = viewModel,
-                        currentStudentNumber = currentStudentNumber
-                    )
+            } else if (selectedAnnouncement == null) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(announcements, key = { it.docId }) { announcement ->
+                        val isRead = announcement.docId in readIds
+                        AnnouncementCard(
+                            announcement = announcement,
+                            isRead = isRead,
+                            myStudentNumber = myStudentNumber,
+                            onLikeClick = { viewModel.toggleLike(announcement.docId) },
+                            onClick = { 
+                                selectedAnnouncement = announcement
+                                viewModel.markAsRead(announcement.docId)
+                            }
+                        )
+                    }
                 }
+            } else {
+                AnnouncementDetailView(
+                    announcement = selectedAnnouncement!!,
+                    viewModel = viewModel,
+                    myStudentNumber = myStudentNumber,
+                    modifier = Modifier,
+                    onBack = { selectedAnnouncement = null }
+                )
             }
         }
+    }
+}
+
+@Composable
+fun CategoryTag(category: String) {
+    val isDark = isSystemInDarkTheme()
+    val backgroundColor = when (category.lowercase()) {
+        "urgent" -> if (isDark) Color(0xFF422222) else Color(0xFFFFEBEE)
+        "event" -> if (isDark) Color(0xFF1E2F3D) else Color(0xFFE3F2FD)
+        "activity" -> if (isDark) Color(0xFF1D3220) else Color(0xFFE8F5E9)
+        "seminar" -> if (isDark) Color(0xFF3D2E1E) else Color(0xFFFFF3E0)
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+    val textColor = when (category.lowercase()) {
+        "urgent" -> if (isDark) Color(0xFFFF8A80) else Color(0xFFD32F2F)
+        "event" -> if (isDark) Color(0xFF82B1FF) else Color(0xFF1976D2)
+        "activity" -> if (isDark) Color(0xFFB9F6CA) else Color(0xFF388E3C)
+        "seminar" -> if (isDark) Color(0xFFFFD180) else Color(0xFFF57C00)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Surface(
+        color = backgroundColor,
+        shape = RoundedCornerShape(4.dp),
+        modifier = Modifier.padding(vertical = 2.dp)
+    ) {
+        Text(
+            text = category.uppercase(),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = textColor,
+            fontSize = 10.sp
+        )
     }
 }
 
 @Composable
 fun AnnouncementCard(
-    announcement: Announcement,
-    viewModel: AnnouncementsViewModel,
-    currentStudentNumber: String
+    announcement: Announcement, 
+    isRead: Boolean, 
+    myStudentNumber: String,
+    onLikeClick: () -> Unit,
+    onClick: () -> Unit
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
-    val comments by viewModel.getComments(announcement.id).collectAsState(initial = emptyList())
-
+    val isLiked = announcement.likedBy.contains(myStudentNumber)
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable {
-                isExpanded = !isExpanded
-                if (!announcement.isRead) {
-                    viewModel.markAsRead(announcement.id)
-                }
-            }
-            .animateContentSize(),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isExpanded) 4.dp else 2.dp),
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(0.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (announcement.isRead) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            containerColor = if (isRead) MaterialTheme.colorScheme.surface 
+                             else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
         ),
-        border = if (!announcement.isRead) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) else null
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                    if (!announcement.isRead) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    Text(
-                        text = announcement.title,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = if (!announcement.isRead) FontWeight.ExtraBold else FontWeight.Bold,
-                        maxLines = if (isExpanded) Int.MAX_VALUE else 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                CategoryChip(text = announcement.category)
-            }
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()).format(Date(announcement.timestamp)),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
-                if (!isExpanded) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "• Click to read",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            AnimatedVisibility(visible = isExpanded) {
-                Column {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    if (announcement.imageUrl != null) {
-                        AsyncImage(
-                            model = announcement.imageUrl,
-                            contentDescription = "Announcement Image",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp)
-                                .clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-
-                    Text(
-                        text = announcement.content,
-                        style = MaterialTheme.typography.bodyLarge,
-                        lineHeight = 24.sp
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                Surface(
+                    modifier = Modifier.size(40.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
                         Text(
-                            text = "Comments (${comments.size})",
-                            style = MaterialTheme.typography.titleSmall,
+                            text = (announcement.departmentName ?: "A").take(1),
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
-                        
-                        IconButton(onClick = { isExpanded = false }) {
-                            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Collapse")
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = announcement.departmentName ?: "Campus Announcement",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (announcement.category.isNotEmpty()) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            CategoryTag(category = announcement.category)
                         }
                     }
-
-                    CommentSection(
-                        announcementId = announcement.id,
-                        comments = comments,
-                        viewModel = viewModel,
-                        currentStudentNumber = currentStudentNumber
+                    Text(
+                        text = SimpleDateFormat("MMM d 'at' h:mm a", Locale.getDefault()).format(Date(announcement.timestamp)),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
                     )
                 }
+                if (!isRead) {
+                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(8.dp)) {}
+                }
+            }
+
+            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                Text(
+                    text = announcement.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = announcement.content,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            if (announcement.imageUrl != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                AsyncImage(
+                    model = announcement.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp),
+                    contentScale = ContentScale.FillWidth
+                )
+            }
+
+            // Likes/Comments Count
+            if (announcement.likedBy.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Favorite, contentDescription = null, tint = Color.Red, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = announcement.likedBy.size.toString(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp), thickness = 0.5.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                InteractionButton(
+                    icon = if (isLiked) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder, 
+                    text = "Like",
+                    tint = if (isLiked) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
+                    onClick = onLikeClick
+                )
+                InteractionButton(
+                    icon = Icons.Outlined.ChatBubbleOutline, 
+                    text = "Comment",
+                    onClick = onClick // Opens detail view
+                )
             }
         }
     }
 }
 
 @Composable
-fun CommentSection(
-    announcementId: Int,
-    comments: List<Comment>,
-    viewModel: AnnouncementsViewModel,
-    currentStudentNumber: String
+fun InteractionButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector, 
+    text: String, 
+    tint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    onClick: () -> Unit
 ) {
-    var newCommentText by remember { mutableStateOf("") }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .clickable { onClick() }
+            .padding(vertical = 10.dp, horizontal = 16.dp)
+    ) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = tint)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text, style = MaterialTheme.typography.labelLarge, color = tint)
+    }
+}
 
-    Column(modifier = Modifier.padding(top = 8.dp)) {
-        comments.forEach { comment ->
-            CommentItem(
-                comment = comment,
-                isOwnComment = comment.studentNumber == currentStudentNumber,
-                onDelete = { viewModel.deleteComment(comment) },
-                onEdit = { viewModel.updateComment(comment, it) },
-                onReport = { viewModel.reportComment(comment.id) }
-            )
-        }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AnnouncementDetailView(
+    announcement: Announcement,
+    viewModel: AnnouncementsViewModel,
+    myStudentNumber: String,
+    modifier: Modifier = Modifier,
+    onBack: () -> Unit
+) {
+    val announcements by viewModel.announcements.collectAsState()
+    val currentAnnouncement = announcements.find { it.docId == announcement.docId } ?: announcement
+    val isLiked = currentAnnouncement.likedBy.contains(myStudentNumber)
+    
+    val comments by viewModel.getComments(announcement.docId).collectAsState(initial = emptyList())
+    var commentText by remember { mutableStateOf("") }
+    var replyingTo by remember { mutableStateOf<Comment?>(null) }
+    val sessionManager = SessionManager(LocalContext.current)
+    val myName = sessionManager.fetchUsername() ?: ""
+    val myProfileImage = sessionManager.fetchProfileImageUrl()
 
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = newCommentText,
-                onValueChange = { newCommentText = it },
-                placeholder = { Text("Add a comment...", fontSize = 14.sp) },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(24.dp),
-                maxLines = 3,
-                textStyle = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            IconButton(
-                onClick = {
-                    if (newCommentText.isNotBlank()) {
-                        viewModel.addComment(announcementId, newCommentText)
-                        newCommentText = ""
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text("Post", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                },
-                enabled = newCommentText.isNotBlank(),
-                colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    disabledContentColor = MaterialTheme.colorScheme.outline
+                }
+            )
+        },
+        bottomBar = {
+            Surface(tonalElevation = 8.dp, modifier = Modifier.imePadding()) {
+                Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                    if (replyingTo != null) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Replying to ${replyingTo!!.studentName}",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(onClick = { replyingTo = null }, modifier = Modifier.size(20.dp)) {
+                                Icon(Icons.Default.Close, contentDescription = null)
+                            }
+                        }
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        if (myProfileImage != null) {
+                            AsyncImage(
+                                model = myProfileImage,
+                                contentDescription = null,
+                                modifier = Modifier.size(36.dp).clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Surface(modifier = Modifier.size(36.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(myName.take(1).uppercase(), fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        OutlinedTextField(
+                            value = commentText,
+                            onValueChange = { commentText = it },
+                            placeholder = { Text("Write a comment...") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent
+                            ),
+                            maxLines = 4,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                            keyboardActions = KeyboardActions(onSend = {
+                                if (commentText.isNotBlank()) {
+                                    viewModel.addComment(announcement.docId, commentText, replyingTo)
+                                    commentText = ""
+                                    replyingTo = null
+                                }
+                            })
+                        )
+                        IconButton(
+                            onClick = {
+                                if (commentText.isNotBlank()) {
+                                    viewModel.addComment(announcement.docId, commentText, replyingTo)
+                                    commentText = ""
+                                    replyingTo = null
+                                }
+                            },
+                            enabled = commentText.isNotBlank()
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Send",
+                                tint = if (commentText.isNotBlank()) MaterialTheme.colorScheme.primary else Color.Gray
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.surface)
+        ) {
+            item {
+                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(modifier = Modifier.size(40.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text((announcement.departmentName ?: "A").take(1), fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(announcement.departmentName ?: "Campus Announcement", fontWeight = FontWeight.Bold)
+                            if (announcement.category.isNotEmpty()) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                CategoryTag(category = announcement.category)
+                            }
+                        }
+                        Text(
+                            SimpleDateFormat("MMM d 'at' h:mm a", Locale.getDefault()).format(Date(announcement.timestamp)),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
+
+                Column(modifier = Modifier.padding(horizontal = 12.dp)) {
+                    Text(announcement.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(announcement.content, style = MaterialTheme.typography.bodyLarge)
+                }
+
+                if (announcement.imageUrl != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    AsyncImage(
+                        model = announcement.imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                        contentScale = ContentScale.FillWidth
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                
+                // Interaction Stats
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (currentAnnouncement.likedBy.isNotEmpty()) {
+                        Icon(Icons.Default.Favorite, contentDescription = null, tint = Color.Red, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = currentAnnouncement.likedBy.size.toString(),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                    }
+                    Text("${comments.size} comments", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
+                }
+                
+                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                
+                // Interaction Bar
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    InteractionButton(
+                        icon = if (isLiked) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                        text = "Like",
+                        tint = if (isLiked) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
+                        onClick = { viewModel.toggleLike(announcement.docId) }
+                    )
+                    InteractionButton(
+                        icon = Icons.Outlined.ChatBubbleOutline,
+                        text = "Comment",
+                        onClick = { /* Focus text field */ }
+                    )
+                }
+
+                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            val topLevelComments = comments.filter { !it.isReply }
+            items(topLevelComments, key = { it.docId }) { parentComment ->
+                CommentHierarchy(
+                    parentComment = parentComment,
+                    allComments = comments,
+                    myStudentNumber = myStudentNumber,
+                    onReply = { replyingTo = it },
+                    onReport = { reason -> viewModel.reportComment(parentComment.docId, reason) }
                 )
-            ) {
-                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+            }
+            
+            item { Spacer(modifier = Modifier.height(16.dp)) }
+        }
+    }
+}
+
+@Composable
+fun CommentHierarchy(
+    parentComment: Comment,
+    allComments: List<Comment>,
+    myStudentNumber: String,
+    onReply: (Comment) -> Unit,
+    onReport: (String) -> Unit
+) {
+    val replies = allComments.filter { 
+        it.isReply && it.parentCommentId == parentComment.docId 
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        CommentItem(
+            comment = parentComment,
+            isMine = parentComment.studentNumber == myStudentNumber,
+            onReply = { onReply(parentComment) },
+            onReport = onReport
+        )
+        
+        replies.forEach { reply ->
+            Box(modifier = Modifier.padding(start = 44.dp)) {
+                CommentItem(
+                    comment = reply,
+                    isMine = reply.studentNumber == myStudentNumber,
+                    onReply = { onReply(reply) },
+                    onReport = onReport,
+                    isReply = true
+                )
             }
         }
     }
@@ -284,133 +557,129 @@ fun CommentSection(
 
 @Composable
 fun CommentItem(
-    comment: Comment,
-    isOwnComment: Boolean,
-    onDelete: () -> Unit,
-    onEdit: (String) -> Unit,
-    onReport: () -> Unit
+    comment: Comment, 
+    isMine: Boolean, 
+    onReply: () -> Unit, 
+    onReport: (String) -> Unit,
+    isReply: Boolean = false
 ) {
-    var showMenu by remember { mutableStateOf(false) }
-    var isEditing by remember { mutableStateOf(false) }
-    var editText by remember { mutableStateOf(comment.content) }
+    var showReportDialog by remember { mutableStateOf(false) }
+    var reportReason by remember { mutableStateOf("") }
+    
+    val isAdmin = comment.role == "admin"
+    val isDark = isSystemInDarkTheme()
+    val bubbleColor = if (isAdmin) {
+        if (isDark) Color(0xFF1E2F3D) else Color(0xFFE3F2FD)
+    } else {
+        if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF0F2F5)
+    }
+    val nameColor = if (isAdmin) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 4.dp),
         verticalAlignment = Alignment.Top
     ) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = comment.studentName.take(1).uppercase(),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+        if (comment.profileImageUrl != null) {
+            AsyncImage(
+                model = comment.profileImageUrl,
+                contentDescription = null,
+                modifier = Modifier.size(if (isReply) 28.dp else 36.dp).clip(CircleShape),
+                contentScale = ContentScale.Crop
             )
+        } else {
+            Surface(
+                modifier = Modifier.size(if (isReply) 28.dp else 36.dp), 
+                shape = CircleShape, 
+                color = if (isAdmin) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(comment.studentName.take(1).uppercase(), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                }
+            }
         }
-        
         Spacer(modifier = Modifier.width(8.dp))
-        
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(topStart = 0.dp, topEnd = 12.dp, bottomEnd = 12.dp, bottomStart = 12.dp)
+        Column {
+            Column(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(bubbleColor)
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = comment.studentName, 
+                        fontWeight = FontWeight.Bold, 
+                        color = nameColor,
+                        style = if (isReply) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge
+                    )
+                    if (isAdmin) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            Icons.Default.Verified, 
+                            contentDescription = "Admin", 
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = comment.content, 
+                    style = if (isReply) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
                 )
-                .padding(8.dp)
-        ) {
+            }
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.padding(start = 8.dp, top = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = comment.studentName,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(comment.timestamp)),
+                    text = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(comment.timestamp)),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline
                 )
-            }
-            
-            if (isEditing) {
-                OutlinedTextField(
-                    value = editText,
-                    onValueChange = { editText = it },
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    trailingIcon = {
-                        IconButton(onClick = { onEdit(editText); isEditing = false }) {
-                            Icon(Icons.Default.Check, contentDescription = "Save", tint = MaterialTheme.colorScheme.primary)
-                        }
-                    },
-                    shape = RoundedCornerShape(8.dp)
-                )
-            } else {
+                Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = comment.content, 
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 2.dp)
+                    "Reply", 
+                    modifier = Modifier.clickable { onReply() }, 
+                    fontWeight = FontWeight.Bold, 
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
                 )
-            }
-        }
-        
-        Box {
-            IconButton(onClick = { showMenu = true }, modifier = Modifier.size(24.dp)) {
-                Icon(Icons.Default.MoreVert, contentDescription = "More", modifier = Modifier.size(16.dp))
-            }
-            DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                if (isOwnComment) {
-                    DropdownMenuItem(
-                        text = { Text("Edit") },
-                        onClick = { isEditing = true; showMenu = false },
-                        leadingIcon = { Icon(Icons.Default.Edit, null) }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Delete") },
-                        onClick = { onDelete(); showMenu = false },
-                        leadingIcon = { Icon(Icons.Default.Delete, null) }
-                    )
-                } else {
-                    DropdownMenuItem(
-                        text = { Text("Report") },
-                        onClick = { onReport(); showMenu = false },
-                        leadingIcon = { Icon(Icons.Default.Flag, null) }
+                if (!isMine) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        "Report", 
+                        modifier = Modifier.clickable { showReportDialog = true }, 
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
                     )
                 }
             }
         }
     }
-}
 
-@Composable
-fun CategoryChip(text: String) {
-    val color = when (text) {
-        "Urgent" -> MaterialTheme.colorScheme.error
-        "Event" -> MaterialTheme.colorScheme.primary
-        "Seminar" -> MaterialTheme.colorScheme.secondary
-        else -> MaterialTheme.colorScheme.tertiary
-    }
-    Surface(
-        color = color.copy(alpha = 0.1f),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.5f))
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = color,
-            fontWeight = FontWeight.Bold
+    if (showReportDialog) {
+        AlertDialog(
+            onDismissRequest = { showReportDialog = false },
+            title = { Text("Report Comment") },
+            text = {
+                OutlinedTextField(
+                    value = reportReason,
+                    onValueChange = { reportReason = it },
+                    label = { Text("Reason for reporting") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onReport(reportReason)
+                    showReportDialog = false
+                }) { Text("Report") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReportDialog = false }) { Text("Cancel") }
+            }
         )
     }
 }

@@ -1,10 +1,12 @@
 package com.example.smartcampuscompanion.ui.announcement_manager
 
+import android.app.Application
 import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,14 +23,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.smartcampuscompanion.data.Announcement
+import com.example.smartcampuscompanion.data.Comment
+import com.example.smartcampuscompanion.data.Department
+import com.example.smartcampuscompanion.ui.announcements.AnnouncementsViewModel
 import com.example.smartcampuscompanion.ui.campus_info.CampusViewModel
+import com.example.smartcampuscompanion.util.ViewModelFactory
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
@@ -45,69 +53,208 @@ fun AnnouncementManagerScreen(
     campusViewModel: CampusViewModel = viewModel(),
     onNavigateUp: () -> Unit
 ) {
+    val context = LocalContext.current
+    val announcementsViewModel: AnnouncementsViewModel = viewModel(factory = ViewModelFactory(context.applicationContext as Application))
     val announcements by announcementManagerViewModel.announcements.collectAsState()
-    val departments by campusViewModel.departmentsWithStudents.collectAsState()
+    val departments by campusViewModel.departments.collectAsState()
+    val reportedComments by announcementsViewModel.reportedComments.collectAsState(initial = emptyList())
+    val isLoading by announcementManagerViewModel.isLoading.collectAsState()
+    
     var showDialog by remember { mutableStateOf(false) }
     var announcementToEdit by remember { mutableStateOf<Announcement?>(null) }
+    var selectedTab by remember { mutableStateOf(0) }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Announcement Manager", color = MaterialTheme.colorScheme.onPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary
+            Column {
+                TopAppBar(
+                    title = { Text("Campus Management", color = MaterialTheme.colorScheme.onPrimary) },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateUp) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
                 )
-            )
+                TabRow(selectedTabIndex = selectedTab) {
+                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }) {
+                        Text("Announcements", modifier = Modifier.padding(12.dp))
+                    }
+                    Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }) {
+                        BadgedBox(badge = {
+                            if (reportedComments.isNotEmpty()) {
+                                Badge { Text(reportedComments.size.toString()) }
+                            }
+                        }) {
+                            Text("Reports", modifier = Modifier.padding(12.dp))
+                        }
+                    }
+                }
+            }
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    announcementToEdit = null
-                    showDialog = true
-                },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Announcement")
+            if (selectedTab == 0) {
+                FloatingActionButton(
+                    onClick = {
+                        announcementToEdit = null
+                        showDialog = true
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Announcement")
+                }
             }
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
-            if (announcements.isEmpty()) {
-                EmptyState()
-            } else {
-                LazyColumn(
+        Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+            if (isLoading && announcements.isEmpty()) {
+                Box(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    contentAlignment = Alignment.Center
                 ) {
-                    items(announcements, key = { it.id }) { announcement ->
-                        AnnouncementItem(
-                            announcement = announcement,
-                            onDelete = { announcementManagerViewModel.delete(announcement) },
-                            onEdit = { announcementToEdit = announcement; showDialog = true }
-                        )
+                    CircularProgressIndicator()
+                }
+            } else if (selectedTab == 0) {
+                if (announcements.isEmpty()) {
+                    EmptyState()
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(announcements, key = { it.docId }) { announcement ->
+                            AnnouncementItem(
+                                announcement = announcement,
+                                onDelete = { announcementManagerViewModel.delete(announcement) },
+                                onEdit = { announcementToEdit = announcement; showDialog = true }
+                            )
+                        }
                     }
                 }
+            } else {
+                ReportedCommentsList(
+                    comments = reportedComments,
+                    onDismiss = { announcementsViewModel.dismissReport(it) },
+                    onBan = { announcementsViewModel.banUser(it) },
+                    onWarn = { announcementsViewModel.warnUser(it) }
+                )
             }
         }
 
         if (showDialog) {
             AnnouncementDialog(
                 announcement = announcementToEdit,
-                departments = departments.map { it.department },
+                departments = departments,
                 onDismiss = { showDialog = false },
                 onSave = { announcementToSave ->
                     if (announcementToEdit == null) announcementManagerViewModel.insert(announcementToSave) else announcementManagerViewModel.update(announcementToSave)
                     showDialog = false
                 }
             )
+        }
+    }
+}
+
+@Composable
+fun ReportedCommentsList(
+    comments: List<Comment>,
+    onDismiss: (String) -> Unit,
+    onBan: (String) -> Unit,
+    onWarn: (String) -> Unit
+) {
+    if (comments.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No reported comments", color = MaterialTheme.colorScheme.outline)
+        }
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(comments, key = { it.docId }) { comment ->
+                ReportedCommentItem(comment, onDismiss, onBan, onWarn)
+            }
+        }
+    }
+}
+
+@Composable
+fun ReportedCommentItem(
+    comment: Comment,
+    onDismiss: (String) -> Unit,
+    onBan: (String) -> Unit,
+    onWarn: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Reported Comment", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.error)
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Text(
+                text = comment.content,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = "Author: ${comment.studentName} (${comment.studentNumber})",
+                    style = MaterialTheme.typography.labelSmall
+                )
+                Text(
+                    text = "Reported by: ${comment.reportedBy ?: "Unknown"}",
+                    style = MaterialTheme.typography.labelSmall
+                )
+                Text(
+                    text = "Reason: ${comment.reportReason ?: "No reason provided"}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = { onDismiss(comment.docId) }) {
+                    Text("Dismiss")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = { onWarn(comment.studentNumber) },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                ) {
+                    Text("Warn")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = { onBan(comment.studentNumber) },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Ban")
+                }
+            }
         }
     }
 }
@@ -164,8 +311,8 @@ fun AnnouncementItem(announcement: Announcement, onDelete: () -> Unit, onEdit: (
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ChipView(text = announcement.category)
-                        if (announcement.departmentName != null) {
-                            ChipView(text = announcement.departmentName)
+                        announcement.departmentName?.let {
+                            ChipView(text = it)
                         }
                     }
                     Text(text = announcement.content, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
@@ -202,7 +349,7 @@ fun ChipView(text: String) {
 @Composable
 fun AnnouncementDialog(
     announcement: Announcement?,
-    departments: List<com.example.smartcampuscompanion.data.Department>,
+    departments: List<Department>,
     onDismiss: () -> Unit,
     onSave: (Announcement) -> Unit
 ) {
@@ -212,7 +359,7 @@ fun AnnouncementDialog(
     var expandedDepartment by remember { mutableStateOf(false) }
     var selectedDepartment by remember { mutableStateOf(announcement?.departmentName) }
     var expandedCategory by remember { mutableStateOf(false) }
-    var selectedCategory by remember { mutableStateOf(announcement?.category) }
+    var selectedCategory by remember { mutableStateOf(announcement?.category ?: "Event") }
     val categories = listOf("Event", "Activity", "Urgent", "Seminar")
 
     val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -285,7 +432,7 @@ fun AnnouncementDialog(
                 item {
                     Box(modifier = Modifier.fillMaxWidth()) {
                         OutlinedButton(onClick = { expandedCategory = true }, modifier = Modifier.fillMaxWidth()) {
-                            Text(selectedCategory ?: "Select Category")
+                            Text(selectedCategory)
                             Spacer(Modifier.weight(1f))
                             Icon(Icons.Default.ArrowDropDown, contentDescription = null)
                         }
@@ -312,12 +459,11 @@ fun AnnouncementDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
                             onClick = {
-                                if (selectedCategory != null) {
-                                    val announcementToSave = announcement?.copy(
-                                        title = title, content = content, dueDate = finalDateTime.timeInMillis, departmentName = selectedDepartment, category = selectedCategory!!, imageUrl = imageUrl
-                                    ) ?: Announcement(title = title, content = content, dueDate = finalDateTime.timeInMillis, departmentName = selectedDepartment, category = selectedCategory!!, imageUrl = imageUrl)
-                                    onSave(announcementToSave)
-                                }
+                                val category = selectedCategory
+                                val announcementToSave = announcement?.copy(
+                                    title = title, content = content, dueDate = finalDateTime.timeInMillis, departmentName = selectedDepartment, category = category, imageUrl = imageUrl
+                                ) ?: Announcement(title = title, content = content, dueDate = finalDateTime.timeInMillis, departmentName = selectedDepartment, category = category, imageUrl = imageUrl)
+                                onSave(announcementToSave)
                             }
                         ) { Text("Save") }
                     }

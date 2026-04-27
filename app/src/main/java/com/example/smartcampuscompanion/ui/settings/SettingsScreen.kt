@@ -18,9 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.smartcampuscompanion.util.SessionManager
+import com.google.firebase.messaging.FirebaseMessaging
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,7 +33,9 @@ fun SettingsScreen(
     onNavigateUp: () -> Unit,
     onLogout: () -> Unit
 ) {
-    var notificationsEnabled by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+    var notificationsEnabled by remember { mutableStateOf(sessionManager.areNotificationsEnabled()) }
     var showLogoutDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -65,7 +70,10 @@ fun SettingsScreen(
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             item {
-                UserProfileCard()
+                UserProfileCard(
+                    name = sessionManager.fetchUsername() ?: "User",
+                    subtitle = "Student ID: ${sessionManager.fetchStudentNumber() ?: "N/A"}"
+                )
             }
 
             item {
@@ -75,7 +83,15 @@ fun SettingsScreen(
                         subtitle = "Campus updates and reminders",
                         icon = Icons.Default.Notifications,
                         checked = notificationsEnabled,
-                        onCheckedChange = { notificationsEnabled = it }
+                        onCheckedChange = { enabled ->
+                            notificationsEnabled = enabled
+                            sessionManager.setNotificationsEnabled(enabled)
+                            if (enabled) {
+                                FirebaseMessaging.getInstance().subscribeToTopic("announcements")
+                            } else {
+                                FirebaseMessaging.getInstance().unsubscribeFromTopic("announcements")
+                            }
+                        }
                     )
                     SettingsToggleItem(
                         title = "Dark Mode",
@@ -197,7 +213,7 @@ fun SettingsScreen(
 }
 
 @Composable
-fun UserProfileCard() {
+fun UserProfileCard(name: String, subtitle: String) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -219,7 +235,7 @@ fun UserProfileCard() {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "JD",
+                    text = name.take(2).uppercase(),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontWeight = FontWeight.Bold
@@ -228,12 +244,12 @@ fun UserProfileCard() {
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "John Doe",
+                    text = name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Computer Science • Senior",
+                    text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

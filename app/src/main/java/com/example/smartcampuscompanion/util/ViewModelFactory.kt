@@ -23,7 +23,7 @@ class ViewModelFactory(private val application: Application) : ViewModelProvider
         }
         if (modelClass.isAssignableFrom(SignUpViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SignUpViewModel(application) as T
+            return SignUpViewModel(application, sessionManager) as T
         }
         if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")

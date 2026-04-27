@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "265760763560",
+    "project_id": "smart-campus-companion-370e0",
+    "storage_bucket": "smart-campus-companion-370e0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:265760763560:android:f1a137483dfa5b803f9c9d",
+        "android_client_info": {
+          "package_name": "com.example.smartcampuscompanion"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "265760763560-lt7d6fhol32m2ki2m837lt8ujks45be5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.smartcampuscompanion",
+            "certificate_hash": "174adb7ee9d491b6724937f7e61a20460b5d69e7"
+          }
+        },
+        {
+          "client_id": "265760763560-tsbl90369io2ukcpmbdna8sgb314m57o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzoeplJT-7ZGqFFNk9x7RRyozceTBUdZo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "265760763560-tsbl90369io2ukcpmbdna8sgb314m57o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

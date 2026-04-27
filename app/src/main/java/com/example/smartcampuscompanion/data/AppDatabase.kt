@@ -4,16 +4,18 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Database(
-    entities = [Task::class, Department::class, Student::class, Grade::class, Announcement::class, Comment::class],
-    version = 12,
+    entities = [Task::class, Department::class, Student::class, Grade::class, Announcement::class, Comment::class, AnnouncementReadStatus::class],
+    version = 23,
     exportSchema = false
 )
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun taskDao(): TaskDao
@@ -46,9 +48,9 @@ abstract class AppDatabase : RoomDatabase() {
     ) : RoomDatabase.Callback() {
         override fun onCreate(db: SupportSQLiteDatabase) {
             super.onCreate(db)
-            INSTANCE?.let {
+            INSTANCE?.let { database ->
                 CoroutineScope(Dispatchers.IO).launch {
-                    val departmentDao = getDatabase(context).departmentDao()
+                    val departmentDao = database.departmentDao()
                     CampusRepository(departmentDao).checkAndPopulate()
                 }
             }

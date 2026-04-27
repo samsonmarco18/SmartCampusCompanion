@@ -2,8 +2,10 @@ package com.example.smartcampuscompanion.data
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Ignore
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.google.firebase.firestore.Exclude
 
 @Entity(
     tableName = "comments",
@@ -25,11 +27,27 @@ import androidx.room.PrimaryKey
 )
 data class Comment(
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    val announcementId: Int,
-    val studentNumber: String,
-    val studentName: String,
-    val content: String,
-    val timestamp: Long = System.currentTimeMillis(),
-    val isReported: Boolean = false
-)
+    var id: Int = 0,
+    var announcementId: Int = 0,
+    var announcementDocId: String = "",
+    var studentNumber: String = "",
+    var studentName: String = "",
+    var profileImageUrl: String? = null,
+    var content: String = "",
+    var role: String = "student",
+    var timestamp: Long = System.currentTimeMillis(),
+    var isReported: Boolean = false,
+    var reportedBy: String? = null,
+    var reportReason: String? = null,
+    
+    // Reply fields
+    var isReply: Boolean = false,
+    var parentCommentId: String? = null, // ID of the comment being replied to
+    var replyToName: String? = null,
+    var replyToStudentNumber: String? = null
+) {
+    @get:Exclude
+    @set:Exclude
+    @Ignore
+    var docId: String = ""
+}

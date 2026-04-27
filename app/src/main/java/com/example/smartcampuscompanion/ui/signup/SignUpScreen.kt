@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.School
@@ -23,7 +24,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -61,9 +61,15 @@ import com.example.smartcampuscompanion.util.ViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignUpScreen(onSignUpSuccess: () -> Unit, onNavigateToLogin: () -> Unit) {
+fun SignUpScreen(
+    initialEmail: String = "",
+    initialName: String = "",
+    onSignUpSuccess: () -> Unit, 
+    onNavigateToLogin: () -> Unit
+) {
     var studentNumber by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf(initialName) }
+    var email by remember { mutableStateOf(initialEmail) }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     val context = LocalContext.current
@@ -165,7 +171,7 @@ fun SignUpScreen(onSignUpSuccess: () -> Unit, onNavigateToLogin: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    "Create Account",
+                    "Complete Registration",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = BeigeSecondary
@@ -213,12 +219,12 @@ fun SignUpScreen(onSignUpSuccess: () -> Unit, onNavigateToLogin: () -> Unit) {
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         OutlinedTextField(
-                            value = password,
-                            onValueChange = { password = it },
-                            label = { Text("Password") },
-                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = BeigePrimary) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Email") },
+                            enabled = initialEmail.isEmpty(),
+                            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = BeigePrimary) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                             keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -226,21 +232,42 @@ fun SignUpScreen(onSignUpSuccess: () -> Unit, onNavigateToLogin: () -> Unit) {
                                 focusedLabelColor = BeigePrimary
                             )
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = confirmPassword,
-                            onValueChange = { confirmPassword = it },
-                            label = { Text("Confirm Password") },
-                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = BeigePrimary) },
-                            visualTransformation = PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(onDone = { signUpViewModel.signUp(studentNumber, username, password, confirmPassword, selectedDepartment, selectedYearLevel) }),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = BeigePrimary,
-                                focusedLabelColor = BeigePrimary
+                        
+                        if (initialEmail.isEmpty()) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            OutlinedTextField(
+                                value = password,
+                                onValueChange = { password = it },
+                                label = { Text("Password") },
+                                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = BeigePrimary) },
+                                visualTransformation = PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = BeigePrimary,
+                                    focusedLabelColor = BeigePrimary
+                                )
                             )
-                        )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            OutlinedTextField(
+                                value = confirmPassword,
+                                onValueChange = { confirmPassword = it },
+                                label = { Text("Confirm Password") },
+                                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = BeigePrimary) },
+                                visualTransformation = PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(onDone = { 
+                                    signUpViewModel.signUp(studentNumber, username, email, password, confirmPassword, selectedDepartment, selectedYearLevel) 
+                                }),
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = BeigePrimary,
+                                    focusedLabelColor = BeigePrimary
+                                )
+                            )
+                        }
+
                         Spacer(modifier = Modifier.height(16.dp))
                         ExposedDropdownMenuBox(
                             expanded = departmentExpanded,
@@ -325,7 +352,13 @@ fun SignUpScreen(onSignUpSuccess: () -> Unit, onNavigateToLogin: () -> Unit) {
                         Spacer(modifier = Modifier.height(24.dp))
                         
                         Button(
-                            onClick = { signUpViewModel.signUp(studentNumber, username, password, confirmPassword, selectedDepartment, selectedYearLevel) },
+                            onClick = { 
+                                if (initialEmail.isNotEmpty()) {
+                                    signUpViewModel.completeGoogleSignUp(studentNumber, username, email, selectedDepartment, selectedYearLevel)
+                                } else {
+                                    signUpViewModel.signUp(studentNumber, username, email, password, confirmPassword, selectedDepartment, selectedYearLevel) 
+                                }
+                            },
                             enabled = signUpState !is SignUpState.Loading,
                             modifier = Modifier.fillMaxWidth().height(50.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = BeigePrimary),
@@ -334,7 +367,7 @@ fun SignUpScreen(onSignUpSuccess: () -> Unit, onNavigateToLogin: () -> Unit) {
                             if (signUpState is SignUpState.Loading) {
                                 CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
                             } else {
-                                Text("Sign Up", fontWeight = FontWeight.Bold)
+                                Text(if (initialEmail.isNotEmpty()) "Complete Profile" else "Sign Up", fontWeight = FontWeight.Bold)
                             }
                         }
                     }

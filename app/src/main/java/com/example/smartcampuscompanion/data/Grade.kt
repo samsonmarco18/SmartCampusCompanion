@@ -9,7 +9,7 @@ import androidx.room.PrimaryKey
     foreignKeys = [
         ForeignKey(
             entity = Student::class,
-            parentColumns = ["id"],
+            parentColumns = ["studentNumber"],
             childColumns = ["studentId"],
             onDelete = ForeignKey.CASCADE
         )
@@ -18,7 +18,7 @@ import androidx.room.PrimaryKey
 data class Grade(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val studentId: Int,
+    val studentId: String,
     val subject: String,
     val grade: Double
 )

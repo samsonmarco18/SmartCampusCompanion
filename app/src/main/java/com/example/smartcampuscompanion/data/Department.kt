@@ -7,8 +7,8 @@ import androidx.room.Relation
 
 @Entity(tableName = "departments")
 data class Department(
-    @PrimaryKey val name: String,
-    val officeEmail: String
+    @PrimaryKey val name: String = "",
+    val officeEmail: String = ""
 )
 
 data class DepartmentWithStudents(

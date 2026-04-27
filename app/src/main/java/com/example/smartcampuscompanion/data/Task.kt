@@ -2,13 +2,18 @@ package com.example.smartcampuscompanion.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.google.firebase.firestore.Exclude
 
 @Entity(tableName = "tasks")
 data class Task(
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
-    val studentNumber: String = "", // Default value to fix UI compilation and handle personalization in ViewModel
-    val title: String,
-    val description: String,
-    val dueDate: Long
+    var id: Int = 0,
+    var studentNumber: String = "",
+    var title: String = "",
+    var description: String = "",
+    var startDate: Long = System.currentTimeMillis(),
+    var dueDate: Long = 0,
+    var isSynced: Boolean = true,
+    var lastModified: Long = System.currentTimeMillis(),
+    @get:Exclude @set:Exclude var docId: String = ""
 )

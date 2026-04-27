@@ -6,9 +6,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.smartcampuscompanion.ui.announcements.AnnouncementsScreen
 import com.example.smartcampuscompanion.ui.campus_info.CampusInfoScreen
 import com.example.smartcampuscompanion.ui.campus_info.CampusViewModel
@@ -33,6 +35,15 @@ sealed class Screen(val route: String) {
     object Settings : Screen("settings")
     object StudentRecord : Screen("student_record")
     object AnnouncementManager : Screen("announcement_manager")
+    
+    fun withArgs(vararg args: String): String {
+        return buildString {
+            append(route)
+            args.forEach { arg ->
+                append("/$arg")
+            }
+        }
+    }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -72,23 +83,39 @@ fun AppNavigation(
                 },
                 onNavigateToSignUp = {
                     navController.navigate(Screen.SignUp.route)
+                },
+                onGoogleFirstTime = { email, name ->
+                    navController.navigate("${Screen.SignUp.route}?email=$email&name=$name")
                 }
             )
         }
-        composable(Screen.SignUp.route) {
-            SignUpScreen(onSignUpSuccess = {
-                navController.navigate(Screen.Login.route) {
-                    popUpTo(Screen.SignUp.route) {
-                        inclusive = true
+        composable(
+            route = "${Screen.SignUp.route}?email={email}&name={name}",
+            arguments = listOf(
+                navArgument("email") { defaultValue = ""; type = NavType.StringType },
+                navArgument("name") { defaultValue = ""; type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email") ?: ""
+            val name = backStackEntry.arguments?.getString("name") ?: ""
+            SignUpScreen(
+                initialEmail = email,
+                initialName = name,
+                onSignUpSuccess = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Login.route) {
+                            inclusive = true
+                        }
+                    }
+                }, 
+                onNavigateToLogin = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.SignUp.route) {
+                            inclusive = true
+                        }
                     }
                 }
-            }, onNavigateToLogin = {
-                navController.navigate(Screen.Login.route) {
-                    popUpTo(Screen.SignUp.route) {
-                        inclusive = true
-                    }
-                }
-            })
+            )
         }
         composable(Screen.Dashboard.route) {
             DashboardScreen(
@@ -107,7 +134,12 @@ fun AppNavigation(
             CampusInfoScreen(viewModel = campusViewModel, onNavigateUp = { navController.navigateUp() })
         }
         composable(Screen.TaskManager.route) {
-            TaskManagerScreen(onNavigateUp = { navController.navigateUp() })
+            val role = sessionManager.fetchRole()
+            if (role == "student") {
+                TaskManagerScreen(onNavigateUp = { navController.navigateUp() })
+            } else {
+                navController.navigateUp()
+            }
         }
         composable(Screen.Announcements.route) {
             AnnouncementsScreen(onNavigateUp = { navController.navigateUp() })
@@ -124,10 +156,20 @@ fun AppNavigation(
             )
         }
         composable(Screen.StudentRecord.route) {
-            StudentRecordScreen(onBackClick = { navController.navigateUp() })
+            val role = sessionManager.fetchRole()
+            if (role == "admin") {
+                StudentRecordScreen(onBackClick = { navController.navigateUp() })
+            } else {
+                navController.navigateUp()
+            }
         }
         composable(Screen.AnnouncementManager.route) {
-            AnnouncementManagerScreen(onNavigateUp = { navController.navigateUp() })
+            val role = sessionManager.fetchRole()
+            if (role == "admin") {
+                AnnouncementManagerScreen(onNavigateUp = { navController.navigateUp() })
+            } else {
+                navController.navigateUp()
+            }
         }
     }
 }

@@ -10,10 +10,20 @@ interface AnnouncementDao {
     fun getAllAnnouncements(): Flow<List<Announcement>>
 
     @Transaction
-    @Query("SELECT * FROM announcements WHERE studentNumber IS NULL OR studentNumber = :studentNumber ORDER BY timestamp DESC")
-    fun getAnnouncementsForStudent(studentNumber: String): Flow<List<Announcement>>
+    @Query("""
+        SELECT a.*, (r.studentNumber IS NOT NULL) as isRead 
+        FROM announcements a 
+        LEFT JOIN announcement_read_status r ON a.id = r.announcementId AND r.studentNumber = :studentNumber 
+        WHERE a.studentNumber IS NULL OR a.studentNumber = :studentNumber 
+        ORDER BY a.timestamp DESC
+    """)
+    fun getAnnouncementsForStudent(studentNumber: String): Flow<List<AnnouncementWithReadStatus>>
 
-    @Query("SELECT COUNT(*) FROM announcements WHERE isRead = 0 AND (studentNumber IS NULL OR studentNumber = :studentNumber)")
+    @Query("""
+        SELECT COUNT(*) FROM announcements a 
+        WHERE (a.studentNumber IS NULL OR a.studentNumber = :studentNumber) 
+        AND a.id NOT IN (SELECT announcementId FROM announcement_read_status WHERE studentNumber = :studentNumber)
+    """)
     fun getUnreadCount(studentNumber: String): Flow<Int>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -25,9 +35,14 @@ interface AnnouncementDao {
     @Delete
     suspend fun delete(announcement: Announcement)
 
-    @Query("UPDATE announcements SET isRead = 1 WHERE id = :id")
-    suspend fun markAsRead(id: Int)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun markAsRead(status: AnnouncementReadStatus)
 
     @Query("DELETE FROM announcements")
     suspend fun deleteAll()
 }
+
+data class AnnouncementWithReadStatus(
+    @Embedded val announcement: Announcement,
+    val isRead: Boolean
+)
