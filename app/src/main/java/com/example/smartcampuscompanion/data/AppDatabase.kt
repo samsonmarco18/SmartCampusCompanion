@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 
 @Database(
     entities = [Task::class, Department::class, Student::class, Grade::class, Announcement::class, Comment::class, AnnouncementReadStatus::class],
-    version = 22,
+    version = 23,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

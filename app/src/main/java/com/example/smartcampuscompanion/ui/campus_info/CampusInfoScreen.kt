@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,6 +51,7 @@ import com.example.smartcampuscompanion.data.DepartmentWithStudents
 @Composable
 fun CampusInfoScreen(viewModel: CampusViewModel = viewModel(), onNavigateUp: () -> Unit) {
     val departmentsWithStudents by viewModel.departmentsWithStudents.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     Scaffold(
         topBar = {
@@ -67,32 +69,43 @@ fun CampusInfoScreen(viewModel: CampusViewModel = viewModel(), onNavigateUp: () 
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            item {
-                AboutSection()
+        if (isLoading && departmentsWithStudents.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
-            item {
-                MissionVisionSection()
-            }
-            item {
-                Text(
-                    text = "Our Departments",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-            items(departmentsWithStudents) { department ->
-                DepartmentCard(
-                    department = department
-                )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(24.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                item {
+                    AboutSection()
+                }
+                item {
+                    MissionVisionSection()
+                }
+                item {
+                    Text(
+                        text = "Our Departments",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                items(departmentsWithStudents) { department ->
+                    DepartmentCard(
+                        department = department
+                    )
+                }
             }
         }
     }

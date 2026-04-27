@@ -35,6 +35,7 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -71,13 +72,6 @@ import com.example.smartcampuscompanion.ui.navigation.Screen
 import com.example.smartcampuscompanion.util.SessionManager
 import kotlinx.coroutines.launch
 
-data class DashboardItem(
-    val title: String,
-    val icon: ImageVector,
-    val onClick: () -> Unit,
-    val badgeCount: Int = 0
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
@@ -89,6 +83,7 @@ fun DashboardScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToStudentRecord: () -> Unit,
+    dashboardViewModel: DashboardViewModel = viewModel(),
     campusViewModel: CampusViewModel = viewModel(),
     announcementsViewModel: AnnouncementsViewModel = viewModel()
 ) {
@@ -100,8 +95,9 @@ fun DashboardScreen(
     val scope = rememberCoroutineScope()
     
     val departmentsWithStudents by campusViewModel.departmentsWithStudents.collectAsState()
-    val totalDepartments = departmentsWithStudents.size
-    val totalStudents = departmentsWithStudents.sumOf { it.students.size }
+    val totalDepartments by dashboardViewModel.totalDepartments.collectAsState()
+    val totalStudents by dashboardViewModel.totalStudents.collectAsState()
+    val isLoading by dashboardViewModel.isLoading.collectAsState()
 
     val unreadCount by announcementsViewModel.unreadAnnouncementsCount.collectAsState()
 
@@ -255,34 +251,47 @@ fun DashboardScreen(
             },
             containerColor = MaterialTheme.colorScheme.background
         ) { paddingValues ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item {
-                    Text(
-                        "Welcome to Smart Campus!",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-                
-                item {
-                    SectionHeader("Available Services")
-                }
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        item {
+                            Text(
+                                "Welcome to Smart Campus!",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                        
+                        item {
+                            SectionHeader("Available Services")
+                        }
 
-                items(items) { item ->
-                    DashboardServiceCard(item)
+                        items(items) { item ->
+                            DashboardServiceCard(item)
+                        }
+                    }
                 }
             }
         }
     }
 }
+
+data class DashboardItem(
+    val title: String,
+    val icon: ImageVector,
+    val onClick: () -> Unit,
+    val badgeCount: Int = 0
+)
 
 @Composable
 fun SectionHeader(name: String) {

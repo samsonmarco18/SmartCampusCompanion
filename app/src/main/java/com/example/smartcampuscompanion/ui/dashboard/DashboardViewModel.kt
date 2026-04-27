@@ -8,6 +8,7 @@ import com.example.smartcampuscompanion.data.Student
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -21,12 +22,16 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _totalStudents = MutableStateFlow(0)
     val totalStudents: StateFlow<Int> = _totalStudents
 
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     init {
         fetchStats()
     }
 
     private fun fetchStats() {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
                 val depts = firestore.collection("departments").get().await()
                 _totalDepartments.value = depts.size()
@@ -38,6 +43,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 _totalStudents.value = students.size()
             } catch (e: Exception) {
                 // Handle error
+            } finally {
+                _isLoading.value = false
             }
         }
     }

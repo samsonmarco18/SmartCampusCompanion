@@ -33,6 +33,7 @@ fun StudentRecordScreen(onBackClick: () -> Unit = {}) {
     val context = LocalContext.current
     val studentRecordViewModel: StudentRecordViewModel = viewModel(factory = ViewModelFactory(context.applicationContext as Application))
     val groupedStudents by studentRecordViewModel.groupedStudents.collectAsState()
+    val isLoading by studentRecordViewModel.isLoading.collectAsState()
 
     Scaffold(
         topBar = {
@@ -95,7 +96,16 @@ fun StudentRecordScreen(onBackClick: () -> Unit = {}) {
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        if (groupedStudents.isEmpty()) {
+        if (isLoading && groupedStudents.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (groupedStudents.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()

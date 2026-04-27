@@ -58,6 +58,7 @@ fun AnnouncementManagerScreen(
     val announcements by announcementManagerViewModel.announcements.collectAsState()
     val departments by campusViewModel.departments.collectAsState()
     val reportedComments by announcementsViewModel.reportedComments.collectAsState(initial = emptyList())
+    val isLoading by announcementManagerViewModel.isLoading.collectAsState()
     
     var showDialog by remember { mutableStateOf(false) }
     var announcementToEdit by remember { mutableStateOf<Announcement?>(null) }
@@ -109,8 +110,15 @@ fun AnnouncementManagerScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
-            if (selectedTab == 0) {
+        Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+            if (isLoading && announcements.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (selectedTab == 0) {
                 if (announcements.isEmpty()) {
                     EmptyState()
                 } else {

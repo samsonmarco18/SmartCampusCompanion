@@ -43,7 +43,7 @@ fun TaskManagerScreen(
     val tasks by taskViewModel.tasks.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var taskToEdit by remember { mutableStateOf<Task?>(null) }
-/*test*/
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -163,19 +163,36 @@ fun TaskItem(task: Task, onDelete: () -> Unit, onEdit: () -> Unit) {
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Schedule, 
-                            contentDescription = "Due date", 
-                            modifier = Modifier.size(16.dp), 
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = SimpleDateFormat("EEE, MMM d, yyyy 'at' h:mm a", Locale.getDefault()).format(Date(task.dueDate)),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Schedule, 
+                                contentDescription = "Start date", 
+                                modifier = Modifier.size(14.dp), 
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Starts: ${SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(task.startDate))}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Schedule, 
+                                contentDescription = "Due date", 
+                                modifier = Modifier.size(14.dp), 
+                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Ends:   ${SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(task.dueDate))}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
                 IconButton(onClick = onDelete) {
@@ -200,12 +217,18 @@ fun TaskDialog(
     var title by remember { mutableStateOf(task?.title ?: "") }
     var description by remember(task) { mutableStateOf(task?.description ?: "") }
 
-    val initialDateTime = remember(task) { Calendar.getInstance().apply { if (task != null) timeInMillis = task.dueDate else timeInMillis = System.currentTimeMillis() } }
-    var pickedDate by remember { mutableStateOf(initialDateTime.toInstant().atZone(TimeZone.getDefault().toZoneId()).toLocalDate()) }
-    var pickedTime by remember { mutableStateOf(initialDateTime.toInstant().atZone(TimeZone.getDefault().toZoneId()).toLocalTime()) }
+    val initialStartDateTime = remember(task) { Calendar.getInstance().apply { if (task != null) timeInMillis = task.startDate else timeInMillis = System.currentTimeMillis() } }
+    var pickedStartDate by remember { mutableStateOf(initialStartDateTime.toInstant().atZone(TimeZone.getDefault().toZoneId()).toLocalDate()) }
+    var pickedStartTime by remember { mutableStateOf(initialStartDateTime.toInstant().atZone(TimeZone.getDefault().toZoneId()).toLocalTime()) }
 
-    val dateDialogState = rememberMaterialDialogState()
-    val timeDialogState = rememberMaterialDialogState()
+    val initialDueDateTime = remember(task) { Calendar.getInstance().apply { if (task != null) timeInMillis = task.dueDate else timeInMillis = System.currentTimeMillis() + 3600000 } }
+    var pickedDueDate by remember { mutableStateOf(initialDueDateTime.toInstant().atZone(TimeZone.getDefault().toZoneId()).toLocalDate()) }
+    var pickedDueTime by remember { mutableStateOf(initialDueDateTime.toInstant().atZone(TimeZone.getDefault().toZoneId()).toLocalTime()) }
+
+    val startDateDialogState = rememberMaterialDialogState()
+    val startTimeDialogState = rememberMaterialDialogState()
+    val dueDateDialogState = rememberMaterialDialogState()
+    val dueTimeDialogState = rememberMaterialDialogState()
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -233,20 +256,38 @@ fun TaskDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                val finalDateTime = remember(pickedDate, pickedTime) { Calendar.getInstance().apply { set(pickedDate.year, pickedDate.monthValue - 1, pickedDate.dayOfMonth, pickedTime.hour, pickedTime.minute) } }
+                val finalStartDateTime = remember(pickedStartDate, pickedStartTime) { 
+                    Calendar.getInstance().apply { 
+                        set(pickedStartDate.year, pickedStartDate.monthValue - 1, pickedStartDate.dayOfMonth, pickedStartTime.hour, pickedStartTime.minute) 
+                    } 
+                }
+                val finalDueDateTime = remember(pickedDueDate, pickedDueTime) { 
+                    Calendar.getInstance().apply { 
+                        set(pickedDueDate.year, pickedDueDate.monthValue - 1, pickedDueDate.dayOfMonth, pickedDueTime.hour, pickedDueTime.minute) 
+                    } 
+                }
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                    TextButton(onClick = { dateDialogState.show() }) { 
-                        Text(
-                            text = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(finalDateTime.time),
-                            color = MaterialTheme.colorScheme.primary
-                        ) 
+                Column {
+                    Text("Start Date & Time", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                        TextButton(onClick = { startDateDialogState.show() }) { 
+                            Text(text = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(finalStartDateTime.time)) 
+                        }
+                        TextButton(onClick = { startTimeDialogState.show() }) { 
+                            Text(text = SimpleDateFormat("h:mm a", Locale.getDefault()).format(finalStartDateTime.time)) 
+                        }
                     }
-                    TextButton(onClick = { timeDialogState.show() }) { 
-                        Text(
-                            text = SimpleDateFormat("h:mm a", Locale.getDefault()).format(finalDateTime.time),
-                            color = MaterialTheme.colorScheme.primary
-                        ) 
+                }
+
+                Column {
+                    Text("Due Date & Time", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                        TextButton(onClick = { dueDateDialogState.show() }) { 
+                            Text(text = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(finalDueDateTime.time)) 
+                        }
+                        TextButton(onClick = { dueTimeDialogState.show() }) { 
+                            Text(text = SimpleDateFormat("h:mm a", Locale.getDefault()).format(finalDueDateTime.time)) 
+                        }
                     }
                 }
 
@@ -260,11 +301,13 @@ fun TaskDialog(
                             val taskToSave = task?.copy(
                                 title = title, 
                                 description = description, 
-                                dueDate = finalDateTime.timeInMillis
+                                startDate = finalStartDateTime.timeInMillis,
+                                dueDate = finalDueDateTime.timeInMillis
                             ) ?: Task(
                                 title = title, 
                                 description = description, 
-                                dueDate = finalDateTime.timeInMillis,
+                                startDate = finalStartDateTime.timeInMillis,
+                                dueDate = finalDueDateTime.timeInMillis,
                                 studentNumber = "" // Set in ViewModel
                             )
                             onSave(taskToSave)
@@ -278,19 +321,19 @@ fun TaskDialog(
         }
     }
 
-    MaterialDialog(
-        dialogState = dateDialogState, 
-        buttons = { positiveButton("Ok"); negativeButton("Cancel") },
-        backgroundColor = MaterialTheme.colorScheme.surface
-    ) {
-        datepicker(initialDate = pickedDate, title = "Pick a date") { date -> pickedDate = date }
+    // Material Dialogs for Start Date/Time
+    MaterialDialog(dialogState = startDateDialogState, buttons = { positiveButton("Ok"); negativeButton("Cancel") }) {
+        datepicker(initialDate = pickedStartDate, title = "Pick start date") { date -> pickedStartDate = date }
+    }
+    MaterialDialog(dialogState = startTimeDialogState, buttons = { positiveButton("Ok"); negativeButton("Cancel") }) {
+        timepicker(initialTime = pickedStartTime, title = "Pick start time") { time -> pickedStartTime = time }
     }
 
-    MaterialDialog(
-        dialogState = timeDialogState, 
-        buttons = { positiveButton("Ok"); negativeButton("Cancel") },
-        backgroundColor = MaterialTheme.colorScheme.surface
-    ) {
-        timepicker(initialTime = pickedTime, title = "Pick a time") { time -> pickedTime = time }
+    // Material Dialogs for Due Date/Time
+    MaterialDialog(dialogState = dueDateDialogState, buttons = { positiveButton("Ok"); negativeButton("Cancel") }) {
+        datepicker(initialDate = pickedDueDate, title = "Pick due date") { date -> pickedDueDate = date }
+    }
+    MaterialDialog(dialogState = dueTimeDialogState, buttons = { positiveButton("Ok"); negativeButton("Cancel") }) {
+        timepicker(initialTime = pickedDueTime, title = "Pick due time") { time -> pickedDueTime = time }
     }
 }

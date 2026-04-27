@@ -34,6 +34,9 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
     private val _readIds = MutableStateFlow<Set<String>>(emptySet())
     val readIds: StateFlow<Set<String>> = _readIds
 
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
     val unreadAnnouncementsCount: StateFlow<Int> = combine(_announcements, _readIds) { announcements, readIds ->
         announcements.count { it.docId !in readIds }
     }.let { flow ->
@@ -53,10 +56,11 @@ class AnnouncementsViewModel(application: Application) : AndroidViewModel(applic
 
     private fun fetchAnnouncements() {
         val studentNumber = sessionManager.fetchStudentNumber() ?: ""
-        
+        _isLoading.value = true
         firestore.collection("announcements")
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, e ->
+                _isLoading.value = false
                 if (e != null) {
                     Log.e("Firestore", "Error fetching announcements", e)
                     return@addSnapshotListener

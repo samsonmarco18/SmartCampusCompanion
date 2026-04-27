@@ -10,6 +10,7 @@ import com.example.smartcampuscompanion.data.DepartmentWithStudents
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -21,6 +22,9 @@ class CampusViewModel(application: Application) : AndroidViewModel(application) 
     private val _departments = MutableStateFlow<List<Department>>(emptyList())
     val departments: StateFlow<List<Department>> = _departments
 
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     val departmentsWithStudents: StateFlow<List<DepartmentWithStudents>> = repository.departmentsWithStudents
         .stateIn(
             scope = viewModelScope,
@@ -30,8 +34,13 @@ class CampusViewModel(application: Application) : AndroidViewModel(application) 
 
     init {
         viewModelScope.launch {
-            repository.checkAndPopulate()
-            _departments.value = repository.getDepartments()
+            _isLoading.value = true
+            try {
+                repository.checkAndPopulate()
+                _departments.value = repository.getDepartments()
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 }

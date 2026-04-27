@@ -48,6 +48,7 @@ fun AnnouncementsScreen(
     val viewModel: AnnouncementsViewModel = viewModel(factory = ViewModelFactory(context.applicationContext as Application))
     val announcements by viewModel.announcements.collectAsState()
     val readIds by viewModel.readIds.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     val sessionManager = SessionManager(context)
     val myStudentNumber = sessionManager.fetchStudentNumber() ?: ""
     
@@ -69,37 +70,45 @@ fun AnnouncementsScreen(
             )
         }
     ) { padding ->
-        if (selectedAnnouncement == null) {
-            LazyColumn(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-                contentPadding = PaddingValues(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(announcements, key = { it.docId }) { announcement ->
-                    val isRead = announcement.docId in readIds
-                    AnnouncementCard(
-                        announcement = announcement,
-                        isRead = isRead,
-                        myStudentNumber = myStudentNumber,
-                        onLikeClick = { viewModel.toggleLike(announcement.docId) },
-                        onClick = { 
-                            selectedAnnouncement = announcement
-                            viewModel.markAsRead(announcement.docId)
-                        }
-                    )
+        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+            if (isLoading && announcements.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
+            } else if (selectedAnnouncement == null) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(announcements, key = { it.docId }) { announcement ->
+                        val isRead = announcement.docId in readIds
+                        AnnouncementCard(
+                            announcement = announcement,
+                            isRead = isRead,
+                            myStudentNumber = myStudentNumber,
+                            onLikeClick = { viewModel.toggleLike(announcement.docId) },
+                            onClick = { 
+                                selectedAnnouncement = announcement
+                                viewModel.markAsRead(announcement.docId)
+                            }
+                        )
+                    }
+                }
+            } else {
+                AnnouncementDetailView(
+                    announcement = selectedAnnouncement!!,
+                    viewModel = viewModel,
+                    myStudentNumber = myStudentNumber,
+                    modifier = Modifier,
+                    onBack = { selectedAnnouncement = null }
+                )
             }
-        } else {
-            AnnouncementDetailView(
-                announcement = selectedAnnouncement!!,
-                viewModel = viewModel,
-                myStudentNumber = myStudentNumber,
-                modifier = Modifier.padding(padding),
-                onBack = { selectedAnnouncement = null }
-            )
         }
     }
 }
@@ -311,6 +320,7 @@ fun AnnouncementDetailView(
     val myProfileImage = sessionManager.fetchProfileImageUrl()
 
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text("Post", fontWeight = FontWeight.Bold) },
